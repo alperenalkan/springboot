@@ -288,15 +288,44 @@
                 type: 'line',
                 data: {
                     labels: [],
-                    datasets: [{
-                        label: 'Bitcoin Price (USD)',
-                        data: [],
-                        borderColor: '#3498db',
-                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4
-                    }]
+                    datasets: [
+                        {
+                            label: 'Bitcoin Price (USD)',
+                            data: [],
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'SMA 20',
+                            data: [],
+                            borderColor: '#f39c12',
+                            borderWidth: 2,
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'SMA 50',
+                            data: [],
+                            borderColor: '#27ae60',
+                            borderWidth: 2,
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'SMA 200',
+                            data: [],
+                            borderColor: '#e74c3c',
+                            borderWidth: 2,
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.4
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -343,16 +372,14 @@
         async function fetchLatestData() {
             try {
                 showMessage('Fetching latest price data...', 'success');
-                
-                const response = await fetch('/api/price/1d/latest');
+                const response = await fetch('/api/price/1d/latest/30');
                 if (!response.ok) {
                     throw new Error('Failed to fetch price data');
                 }
-                
-                const data = await response.json();
-                updatePriceDisplay(data);
+                const dataArr = await response.json();
+                updatePriceDisplay(dataArr[dataArr.length - 1]); // last price for stat cards
+                updateChart(dataArr);
                 showMessage('Price data updated successfully!', 'success');
-                
             } catch (error) {
                 console.error('Error fetching price data:', error);
                 showMessage('Error fetching price data: ' + error.message, 'error');
@@ -430,7 +457,7 @@
             lastPrice = currentPrice;
             
             // Update chart
-            updateChart(data);
+            // updateChart(data); // This line is now handled by the new fetchLatestData
         }
 
         function updateSignalDisplay(signal) {
@@ -488,22 +515,23 @@
             }
         }
 
-        function updateChart(data) {
-            if (!data || !priceChart) return;
-            
-            const timestamp = new Date(data.timestamp).toLocaleDateString();
-            const price = parseFloat(data.closePrice);
-            
-            // Add new data point
-            priceChart.data.labels.push(timestamp);
-            priceChart.data.datasets[0].data.push(price);
-            
-            // Keep only last 30 data points
-            if (priceChart.data.labels.length > 30) {
-                priceChart.data.labels.shift();
-                priceChart.data.datasets[0].data.shift();
-            }
-            
+        function updateChart(dataArr) {
+            if (!dataArr || !priceChart) return;
+            // Clear old data
+            priceChart.data.labels = [];
+            priceChart.data.datasets[0].data = [];
+            priceChart.data.datasets[1].data = [];
+            priceChart.data.datasets[2].data = [];
+            priceChart.data.datasets[3].data = [];
+            // Fill with new data
+            dataArr.forEach(data => {
+                const timestamp = new Date(data.timestamp).toLocaleDateString();
+                priceChart.data.labels.push(timestamp);
+                priceChart.data.datasets[0].data.push(parseFloat(data.closePrice));
+                priceChart.data.datasets[1].data.push(data.sma20 !== undefined ? parseFloat(data.sma20) : null);
+                priceChart.data.datasets[2].data.push(data.sma50 !== undefined ? parseFloat(data.sma50) : null);
+                priceChart.data.datasets[3].data.push(data.sma200 !== undefined ? parseFloat(data.sma200) : null);
+            });
             priceChart.update();
         }
 

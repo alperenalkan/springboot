@@ -20,6 +20,10 @@ public class PriceDto {
     private BigDecimal volume;
     private String intervalType;
     
+    private BigDecimal sma20;
+    private BigDecimal sma50;
+    private BigDecimal sma200;
+    
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
     
@@ -103,6 +107,25 @@ public class PriceDto {
         this.intervalType = intervalType;
     }
     
+    public BigDecimal getSma20() {
+        return sma20;
+    }
+    public void setSma20(BigDecimal sma20) {
+        this.sma20 = sma20;
+    }
+    public BigDecimal getSma50() {
+        return sma50;
+    }
+    public void setSma50(BigDecimal sma50) {
+        this.sma50 = sma50;
+    }
+    public BigDecimal getSma200() {
+        return sma200;
+    }
+    public void setSma200(BigDecimal sma200) {
+        this.sma200 = sma200;
+    }
+    
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -122,6 +145,9 @@ public class PriceDto {
                 ", closePrice=" + closePrice +
                 ", volume=" + volume +
                 ", intervalType='" + intervalType + '\'' +
+                ", sma20=" + sma20 +
+                ", sma50=" + sma50 +
+                ", sma200=" + sma200 +
                 ", createdAt=" + createdAt +
                 '}';
     }

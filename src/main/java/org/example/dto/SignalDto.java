@@ -41,6 +41,8 @@ public class SignalDto {
     private BigDecimal macdHistogram;
     private BigDecimal sma20;
     private BigDecimal ema12;
+    private BigDecimal sma50;
+    private BigDecimal sma200;
     
     private String reasoning;
     
@@ -137,6 +139,19 @@ public class SignalDto {
         this.ema12 = ema12;
     }
     
+    public BigDecimal getSma50() {
+        return sma50;
+    }
+    public void setSma50(BigDecimal sma50) {
+        this.sma50 = sma50;
+    }
+    public BigDecimal getSma200() {
+        return sma200;
+    }
+    public void setSma200(BigDecimal sma200) {
+        this.sma200 = sma200;
+    }
+    
     public String getReasoning() {
         return reasoning;
     }
@@ -157,6 +172,8 @@ public class SignalDto {
                 ", macdSignal=" + macdSignal +
                 ", macdHistogram=" + macdHistogram +
                 ", sma20=" + sma20 +
+                ", sma50=" + sma50 +
+                ", sma200=" + sma200 +
                 ", ema12=" + ema12 +
                 ", reasoning='" + reasoning + '\'' +
                 '}';

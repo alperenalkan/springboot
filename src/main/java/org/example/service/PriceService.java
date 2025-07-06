@@ -10,6 +10,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collections;
 
 @Service
 public class PriceService {
@@ -37,9 +39,25 @@ public class PriceService {
      */
     public List<PriceDto> getLatestPriceData(PriceEntity.IntervalType intervalType, int limit) {
         List<PriceEntity> entities = priceRepository.findLatestNByIntervalType(intervalType, limit);
-        return entities.stream()
-                .map(PriceDto::new)
-                .collect(Collectors.toList());
+        // Veriler DESC geliyor, grafikte doğru sıralama için ters çevir
+        Collections.reverse(entities);
+        List<PriceDto> dtos = new ArrayList<>();
+        List<PriceEntity> subList;
+        for (int i = 0; i < entities.size(); i++) {
+            PriceEntity entity = entities.get(i);
+            PriceDto dto = new PriceDto(entity);
+            // SMA20
+            subList = entities.subList(Math.max(0, i - 19), i + 1);
+            dto.setSma20(indicatorService.calculateSMA(subList, 20));
+            // SMA50
+            subList = entities.subList(Math.max(0, i - 49), i + 1);
+            dto.setSma50(indicatorService.calculateSMA(subList, 50));
+            // SMA200
+            subList = entities.subList(Math.max(0, i - 199), i + 1);
+            dto.setSma200(indicatorService.calculateSMA(subList, 200));
+            dtos.add(dto);
+        }
+        return dtos;
     }
     
     /**
@@ -61,6 +79,8 @@ public class PriceService {
         BigDecimal rsi = indicatorService.calculateRSI(prices);
         IndicatorService.MACDResult macd = indicatorService.calculateMACD(prices);
         BigDecimal sma20 = indicatorService.calculateSMA(prices, 20);
+        BigDecimal sma50 = indicatorService.calculateSMA(prices, 50);
+        BigDecimal sma200 = indicatorService.calculateSMA(prices, 200);
         BigDecimal ema12 = indicatorService.calculateEMA(prices, 12);
         
         // Sinyal üret
@@ -75,6 +95,8 @@ public class PriceService {
         signalDto.setMacdSignal(macd.signalLine);
         signalDto.setMacdHistogram(macd.histogram);
         signalDto.setSma20(sma20);
+        signalDto.setSma50(sma50);
+        signalDto.setSma200(sma200);
         signalDto.setEma12(ema12);
         
         return signalDto;
