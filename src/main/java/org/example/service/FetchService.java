@@ -91,18 +91,22 @@ public class FetchService {
                     
                     logger.debug("Processing timestamp: {}, price: {}, dateTime: {}", timestamp, price, dateTime);
                     
-                    // Temporarily skip existence check to debug
-                    PriceEntity entity = new PriceEntity(
-                            dateTime,
-                            price, // OHLC için aynı değer kullanıyoruz (basitleştirme)
-                            price,
-                            price,
-                            price,
-                            BigDecimal.ZERO, // Volume bilgisi yok
-                            intervalType
-                    );
-                    priceEntities.add(entity);
-                    logger.debug("Added new entity for timestamp: {}", dateTime);
+                    // Sadece yeni veri ekle
+                    if (!priceRepository.existsByTimestampAndIntervalType(dateTime, intervalType)) {
+                        PriceEntity entity = new PriceEntity(
+                                dateTime,
+                                price, // OHLC için aynı değer kullanıyoruz (basitleştirme)
+                                price,
+                                price,
+                                price,
+                                BigDecimal.ZERO, // Volume bilgisi yok
+                                intervalType
+                        );
+                        priceEntities.add(entity);
+                        logger.debug("Added new entity for timestamp: {}", dateTime);
+                    } else {
+                        logger.debug("Skipped duplicate entity for timestamp: {}", dateTime);
+                    }
                 }
                 
                 logger.info("Created {} new entities to save", priceEntities.size());

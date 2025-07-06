@@ -372,7 +372,7 @@
         async function fetchLatestData() {
             try {
                 showMessage('Fetching latest price data...', 'success');
-                const response = await fetch('/api/price/1d/latest/30');
+                const response = await fetch('/api/price/1d/latest/200');
                 if (!response.ok) {
                     throw new Error('Failed to fetch price data');
                 }
@@ -517,13 +517,12 @@
 
         function updateChart(dataArr) {
             if (!dataArr || !priceChart) return;
-            // Clear old data
+            // Tüm veriyi göster
             priceChart.data.labels = [];
             priceChart.data.datasets[0].data = [];
             priceChart.data.datasets[1].data = [];
             priceChart.data.datasets[2].data = [];
             priceChart.data.datasets[3].data = [];
-            // Fill with new data
             dataArr.forEach(data => {
                 const timestamp = new Date(data.timestamp).toLocaleDateString();
                 priceChart.data.labels.push(timestamp);

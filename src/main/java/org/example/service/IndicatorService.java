@@ -127,7 +127,7 @@ public class IndicatorService {
      */
     public BigDecimal calculateSMA(List<PriceEntity> prices, int period) {
         if (prices.size() < period) {
-            return BigDecimal.ZERO;
+            return null;
         }
         
         BigDecimal sum = BigDecimal.ZERO;
@@ -138,7 +138,7 @@ public class IndicatorService {
         if (period > 0) {
             return sum.divide(BigDecimal.valueOf(period), 8, RoundingMode.HALF_UP);
         }
-        return BigDecimal.ZERO;
+        return null;
     }
     
     /**
