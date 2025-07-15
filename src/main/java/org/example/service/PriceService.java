@@ -71,8 +71,10 @@ public class PriceService {
             return createEmptySignal(intervalType);
         }
         
-        // En son fiyat
-        PriceEntity latestPrice = prices.get(0);
+        // Fiyatları en eski -> en yeni olacak şekilde sırala
+        Collections.reverse(prices);
+        // En güncel fiyat
+        PriceEntity latestPrice = prices.get(prices.size() - 1);
         BigDecimal currentPrice = latestPrice.getClosePrice();
         
         // Teknik indikatörleri hesapla
@@ -84,8 +86,8 @@ public class PriceService {
         BigDecimal ema12 = indicatorService.calculateEMA(prices, 12);
         
         // Sinyal üret
-        SignalDto.SignalType signal = determineSignal(rsi, macd, currentPrice, sma20);
-        String reasoning = generateReasoning(rsi, macd, currentPrice, sma20, signal);
+        SignalDto.SignalType signal = determineSignal(rsi, macd, currentPrice, sma20, sma50, sma200);
+        String reasoning = generateReasoning(rsi, macd, currentPrice, sma20, sma50, sma200, signal);
         
         // SignalDto oluştur
         SignalDto signalDto = new SignalDto(signal, intervalType.getValue(), 
@@ -99,6 +101,123 @@ public class PriceService {
         signalDto.setSma200(sma200);
         signalDto.setEma12(ema12);
         
+        // --- Stop Loss & Take Profit Hesaplama ---
+        // 1. Destek/Direnç (son dip/tepe)
+        BigDecimal lastSupport = null;
+        BigDecimal lastResistance = null;
+        for (int i = 1; i < prices.size(); i++) {
+            if (prices.get(i).getLowPrice().compareTo(prices.get(i-1).getLowPrice()) < 0) {
+                lastSupport = prices.get(i).getLowPrice();
+            }
+            if (prices.get(i).getHighPrice().compareTo(prices.get(i-1).getHighPrice()) > 0) {
+                lastResistance = prices.get(i).getHighPrice();
+            }
+        }
+        // 2. EMA/MA
+        BigDecimal stopEma = ema12;
+        BigDecimal tpEma = sma50;
+        // 3. RSI/MACD
+        boolean rsiBuy = rsi.compareTo(BigDecimal.valueOf(30)) < 0;
+        boolean rsiSell = rsi.compareTo(BigDecimal.valueOf(70)) > 0;
+        boolean macdSell = macd.macdLine.compareTo(macd.signalLine) < 0;
+        boolean macdBuy = macd.macdLine.compareTo(macd.signalLine) > 0;
+        // 4. ATR
+        BigDecimal atr = indicatorService.calculateATR(prices, 14);
+        // --- Hesaplama ---
+        BigDecimal stopLoss = null;
+        BigDecimal takeProfit = null;
+        StringBuilder sltpExplain = new StringBuilder();
+        if (signal == SignalDto.SignalType.BUY) {
+            // Destek/Direnç
+            if (lastSupport != null) {
+                stopLoss = lastSupport.subtract(atr);
+                sltpExplain.append("Stop: Son destek - ATR (Destek/Direnç)");
+            }
+            if (lastResistance != null) {
+                takeProfit = lastResistance;
+                sltpExplain.append(", TP: İlk direnç (Destek/Direnç)");
+            }
+            // EMA/MA
+            if (stopLoss == null && stopEma != null) {
+                stopLoss = stopEma;
+                sltpExplain.append(" | Stop: EMA12 (EMA/MA)");
+            }
+            if (takeProfit == null && tpEma != null) {
+                takeProfit = tpEma;
+                sltpExplain.append(" | TP: SMA50 (EMA/MA)");
+            }
+            // RSI/MACD
+            if (stopLoss == null && rsiBuy && macdSell) {
+                stopLoss = currentPrice.multiply(BigDecimal.valueOf(0.98));
+                sltpExplain.append(" | Stop: RSI<30, MACD sat (RSI/MACD)");
+            }
+            if (takeProfit == null && rsiSell && macdBuy) {
+                takeProfit = currentPrice.multiply(BigDecimal.valueOf(1.03));
+                sltpExplain.append(" | TP: RSI>70, MACD al (RSI/MACD)");
+            }
+            // ATR
+            if (stopLoss == null && atr.compareTo(BigDecimal.ZERO) > 0) {
+                stopLoss = currentPrice.subtract(atr);
+                sltpExplain.append(" | Stop: 1xATR (ATR)");
+            }
+            if (takeProfit == null && atr.compareTo(BigDecimal.ZERO) > 0) {
+                takeProfit = currentPrice.add(atr.multiply(BigDecimal.valueOf(2)));
+                sltpExplain.append(" | TP: 2xATR (ATR)");
+            }
+        } else if (signal == SignalDto.SignalType.SELL) {
+            // Destek/Direnç
+            if (lastResistance != null) {
+                stopLoss = lastResistance.add(atr);
+                sltpExplain.append("Stop: Son direnç + ATR (Destek/Direnç)");
+            }
+            if (lastSupport != null) {
+                takeProfit = lastSupport;
+                sltpExplain.append(", TP: İlk destek (Destek/Direnç)");
+            }
+            // EMA/MA
+            if (stopLoss == null && stopEma != null) {
+                stopLoss = stopEma;
+                sltpExplain.append(" | Stop: EMA12 (EMA/MA)");
+            }
+            if (takeProfit == null && tpEma != null) {
+                takeProfit = tpEma;
+                sltpExplain.append(" | TP: SMA50 (EMA/MA)");
+            }
+            // RSI/MACD
+            if (stopLoss == null && rsiSell && macdBuy) {
+                stopLoss = currentPrice.multiply(BigDecimal.valueOf(1.02));
+                sltpExplain.append(" | Stop: RSI>70, MACD al (RSI/MACD)");
+            }
+            if (takeProfit == null && rsiBuy && macdSell) {
+                takeProfit = currentPrice.multiply(BigDecimal.valueOf(0.97));
+                sltpExplain.append(" | TP: RSI<30, MACD sat (RSI/MACD)");
+            }
+            // ATR
+            if (stopLoss == null && atr.compareTo(BigDecimal.ZERO) > 0) {
+                stopLoss = currentPrice.add(atr);
+                sltpExplain.append(" | Stop: 1xATR (ATR)");
+            }
+            if (takeProfit == null && atr.compareTo(BigDecimal.ZERO) > 0) {
+                takeProfit = currentPrice.subtract(atr.multiply(BigDecimal.valueOf(2)));
+                sltpExplain.append(" | TP: 2xATR (ATR)");
+            }
+        }
+        signalDto.setStopLoss(stopLoss);
+        signalDto.setTakeProfit(takeProfit);
+        signalDto.setSltpExplanation(sltpExplain.toString());
+        // --- Minimum fark kontrolü ---
+        BigDecimal minDiffRatio = new BigDecimal("0.01"); // %1
+        if (takeProfit != null && takeProfit.subtract(currentPrice).abs()
+                .compareTo(currentPrice.multiply(minDiffRatio)) < 0) {
+            takeProfit = null;
+            sltpExplain.append(" | Uygun take profit seviyesi bulunamadı.");
+        }
+        if (stopLoss != null && stopLoss.subtract(currentPrice).abs()
+                .compareTo(currentPrice.multiply(minDiffRatio)) < 0) {
+            stopLoss = null;
+            sltpExplain.append(" | Uygun stop loss seviyesi bulunamadı.");
+        }
+        // ---
         return signalDto;
     }
     
@@ -122,27 +241,42 @@ public class PriceService {
      * Teknik indikatörlere göre sinyal belirler
      */
     private SignalDto.SignalType determineSignal(BigDecimal rsi, IndicatorService.MACDResult macd, 
-                                               BigDecimal currentPrice, BigDecimal sma20) {
+                                               BigDecimal currentPrice, BigDecimal sma20, BigDecimal sma50, BigDecimal sma200) {
         int buySignals = 0;
         int sellSignals = 0;
-        
+
         // RSI sinyali
         String rsiSignal = indicatorService.generateRSISignal(rsi);
         if ("BUY".equals(rsiSignal)) buySignals++;
         else if ("SELL".equals(rsiSignal)) sellSignals++;
-        
+
         // MACD sinyali
         String macdSignal = indicatorService.generateMACDSignal(macd);
         if ("BUY".equals(macdSignal)) buySignals++;
         else if ("SELL".equals(macdSignal)) sellSignals++;
-        
-        // Moving Average sinyali
-        if (currentPrice.compareTo(sma20) > 0) {
-            buySignals++; // Fiyat SMA'nın üstünde
-        } else {
-            sellSignals++; // Fiyat SMA'nın altında
+
+        // SMA20, SMA50, SMA200 sinyalleri
+        if (sma20 != null && sma50 != null && sma200 != null) {
+            boolean aboveAll = currentPrice.compareTo(sma20) > 0 && currentPrice.compareTo(sma50) > 0 && currentPrice.compareTo(sma200) > 0;
+            boolean belowAll = currentPrice.compareTo(sma20) < 0 && currentPrice.compareTo(sma50) < 0 && currentPrice.compareTo(sma200) < 0;
+            if (aboveAll) buySignals += 2; // Güçlü AL
+            else if (belowAll) sellSignals += 2; // Güçlü SAT
+            else {
+                if (currentPrice.compareTo(sma20) > 0) buySignals++;
+                else sellSignals++;
+                if (currentPrice.compareTo(sma50) > 0) buySignals++;
+                else sellSignals++;
+                if (currentPrice.compareTo(sma200) > 0) buySignals++;
+                else sellSignals++;
+            }
+            // Trend dizilimi
+            if (sma20.compareTo(sma50) > 0 && sma50.compareTo(sma200) > 0) buySignals++; // Pozitif trend
+            if (sma20.compareTo(sma50) < 0 && sma50.compareTo(sma200) < 0) sellSignals++; // Negatif trend
+        } else if (sma20 != null) {
+            if (currentPrice.compareTo(sma20) > 0) buySignals++;
+            else sellSignals++;
         }
-        
+
         // Çoğunluk oyuna göre karar ver
         if (buySignals > sellSignals) {
             return SignalDto.SignalType.BUY;
@@ -157,7 +291,7 @@ public class PriceService {
      * Sinyal için açıklama üretir
      */
     private String generateReasoning(BigDecimal rsi, IndicatorService.MACDResult macd, 
-                                   BigDecimal currentPrice, BigDecimal sma20, SignalDto.SignalType signal) {
+                                   BigDecimal currentPrice, BigDecimal sma20, BigDecimal sma50, BigDecimal sma200, SignalDto.SignalType signal) {
         StringBuilder reasoning = new StringBuilder();
         
         reasoning.append("RSI: ").append(rsi).append(" ");
@@ -177,12 +311,30 @@ public class PriceService {
         }
         
         reasoning.append("| Fiyat SMA20: ");
-        if (currentPrice.compareTo(sma20) > 0) {
+        if (sma20 != null && currentPrice.compareTo(sma20) > 0) {
             reasoning.append("Üstünde ");
         } else {
             reasoning.append("Altında ");
         }
-        
+        reasoning.append("| Fiyat SMA50: ");
+        if (sma50 != null && currentPrice.compareTo(sma50) > 0) {
+            reasoning.append("Üstünde ");
+        } else {
+            reasoning.append("Altında ");
+        }
+        reasoning.append("| Fiyat SMA200: ");
+        if (sma200 != null && currentPrice.compareTo(sma200) > 0) {
+            reasoning.append("Üstünde ");
+        } else {
+            reasoning.append("Altında ");
+        }
+        if (sma20 != null && sma50 != null && sma200 != null) {
+            if (sma20.compareTo(sma50) > 0 && sma50.compareTo(sma200) > 0) {
+                reasoning.append("| Trend: Pozitif (SMA20 > SMA50 > SMA200) ");
+            } else if (sma20.compareTo(sma50) < 0 && sma50.compareTo(sma200) < 0) {
+                reasoning.append("| Trend: Negatif (SMA20 < SMA50 < SMA200) ");
+            }
+        }
         reasoning.append("| Sinyal: ").append(signal.getDisplayText());
         
         return reasoning.toString();

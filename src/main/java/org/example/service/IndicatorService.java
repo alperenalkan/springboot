@@ -101,20 +101,20 @@ public class IndicatorService {
         if (prices.size() < macdSlowPeriod) {
             return new MACDResult(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
         }
-        
-        // EMA hesaplamaları
-        BigDecimal ema12 = calculateEMA(prices, macdFastPeriod);
-        BigDecimal ema26 = calculateEMA(prices, macdSlowPeriod);
-        
-        // MACD Line
-        BigDecimal macdLine = ema12.subtract(ema26);
-        
-        // MACD Signal Line (EMA of MACD Line)
-        BigDecimal macdSignal = calculateEMASignal(prices, macdLine, macdSignalPeriod);
-        
+        // MACD Line'ları hesapla
+        List<BigDecimal> macdLines = new java.util.ArrayList<>();
+        for (int i = macdSlowPeriod; i < prices.size(); i++) {
+            List<PriceEntity> subList = prices.subList(0, i + 1);
+            BigDecimal emaFast = calculateEMA(subList, macdFastPeriod);
+            BigDecimal emaSlow = calculateEMA(subList, macdSlowPeriod);
+            macdLines.add(emaFast.subtract(emaSlow));
+        }
+        // Son MACD Line
+        BigDecimal macdLine = macdLines.get(macdLines.size() - 1);
+        // Signal Line: MACD Line'ların EMA'sı
+        BigDecimal macdSignal = calculateEMAFromValues(macdLines, macdSignalPeriod);
         // MACD Histogram
         BigDecimal macdHistogram = macdLine.subtract(macdSignal);
-        
         return new MACDResult(
                 macdLine.setScale(8, RoundingMode.HALF_UP),
                 macdSignal.setScale(8, RoundingMode.HALF_UP),
@@ -165,12 +165,53 @@ public class IndicatorService {
         return ema.setScale(8, RoundingMode.HALF_UP);
     }
     
+    // EMA hesaplaması: BigDecimal listesi için (MACD Signal Line için)
+    public BigDecimal calculateEMAFromValues(List<BigDecimal> values, int period) {
+        if (values.size() < period) {
+            return BigDecimal.ZERO;
+        }
+        // İlk EMA değeri SMA olarak hesaplanır
+        BigDecimal ema = BigDecimal.ZERO;
+        for (int i = 0; i < period; i++) {
+            ema = ema.add(values.get(i));
+        }
+        ema = ema.divide(BigDecimal.valueOf(period), 8, RoundingMode.HALF_UP);
+        // Kalan değerler için EMA hesapla
+        BigDecimal multiplier = BigDecimal.valueOf(2.0 / (period + 1));
+        for (int i = period; i < values.size(); i++) {
+            ema = values.get(i).multiply(multiplier)
+                    .add(ema.multiply(BigDecimal.ONE.subtract(multiplier)));
+        }
+        return ema.setScale(8, RoundingMode.HALF_UP);
+    }
+    
     /**
      * MACD Signal Line için EMA hesaplar
      */
     private BigDecimal calculateEMASignal(List<PriceEntity> prices, BigDecimal macdLine, int period) {
         // Bu basitleştirilmiş bir hesaplama - gerçek uygulamada MACD değerlerinin geçmişini tutmak gerekir
         return macdLine.multiply(BigDecimal.valueOf(2.0 / (period + 1)));
+    }
+    
+    /**
+     * ATR (Average True Range) hesaplar
+     */
+    public BigDecimal calculateATR(List<PriceEntity> prices, int period) {
+        if (prices.size() < period + 1) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal atr = BigDecimal.ZERO;
+        for (int i = 1; i <= period; i++) {
+            PriceEntity current = prices.get(i);
+            PriceEntity prev = prices.get(i - 1);
+            BigDecimal highLow = current.getHighPrice().subtract(current.getLowPrice()).abs();
+            BigDecimal highClose = current.getHighPrice().subtract(prev.getClosePrice()).abs();
+            BigDecimal lowClose = current.getLowPrice().subtract(prev.getClosePrice()).abs();
+            BigDecimal trueRange = highLow.max(highClose).max(lowClose);
+            atr = atr.add(trueRange);
+        }
+        atr = atr.divide(BigDecimal.valueOf(period), 8, RoundingMode.HALF_UP);
+        return atr;
     }
     
     /**

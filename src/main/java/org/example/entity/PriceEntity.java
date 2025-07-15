@@ -3,6 +3,7 @@ package org.example.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
 @Table(name = "price_data")
@@ -38,18 +39,27 @@ public class PriceEntity {
     private LocalDateTime createdAt;
     
     public enum IntervalType {
-        ONE_HOUR("1h"),
-        FOUR_HOURS("4h"),
-        ONE_DAY("1d");
-        
-        private final String value;
-        
-        IntervalType(String value) {
-            this.value = value;
+        ONE_HOUR("1h", "1hour", "hourly"),
+        FOUR_HOURS("4h", "4hours"),
+        ONE_DAY("1d", "1day", "daily");
+
+        private final Set<String> aliases;
+
+        IntervalType(String... aliases) {
+            this.aliases = Set.of(aliases);
         }
-        
+
+        public static IntervalType fromString(String input) {
+            for (IntervalType type : values()) {
+                if (type.aliases.contains(input.toLowerCase())) {
+                    return type;
+                }
+            }
+            throw new IllegalArgumentException("Invalid interval: " + input);
+        }
+
         public String getValue() {
-            return value;
+            return aliases.iterator().next();
         }
     }
     

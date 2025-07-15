@@ -5,8 +5,11 @@ import org.example.service.FetchService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RestController
 @RequestMapping("/api/fetch")
@@ -14,6 +17,8 @@ import java.util.Map;
 public class FetchController {
     
     private final FetchService fetchService;
+    // Son fetch zamanı için static referans
+    private static final AtomicReference<LocalDateTime> lastFetchTime = new AtomicReference<>();
     
     public FetchController(FetchService fetchService) {
         this.fetchService = fetchService;
@@ -23,10 +28,11 @@ public class FetchController {
      * POST /api/fetch/{interval} - Belirli interval için yeni verileri çeker
      */
     @PostMapping("/{interval}")
-    public ResponseEntity<Map<String, String>> fetchData(@PathVariable String interval) {
+    public ResponseEntity<Object> fetchData(@PathVariable String interval) {
         try {
-            PriceEntity.IntervalType intervalType = parseIntervalType(interval);
+            PriceEntity.IntervalType intervalType = PriceEntity.IntervalType.fromString(interval);
             String result = fetchService.fetchDataManually(intervalType);
+            lastFetchTime.set(LocalDateTime.now());
             
             Map<String, String> response = new HashMap<>();
             response.put("message", result);
@@ -35,10 +41,21 @@ public class FetchController {
             
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Invalid interval: " + interval);
-            response.put("status", "error");
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(Map.of(
+                "errors", List.of(Map.of(
+                    "status", "400",
+                    "title", "Invalid Interval",
+                    "detail", "The interval '" + interval + "' is not supported."
+                ))
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                "errors", List.of(Map.of(
+                    "status", "500",
+                    "title", "Internal Server Error",
+                    "detail", e.getMessage()
+                ))
+            ));
         }
     }
     
@@ -67,13 +84,10 @@ public class FetchController {
      * GET /api/fetch/status - Veri çekme durumunu kontrol eder
      */
     @GetMapping("/status")
-    public ResponseEntity<Map<String, Object>> getFetchStatus() {
+    public ResponseEntity<Object> getStatus() {
         Map<String, Object> status = new HashMap<>();
-        status.put("scheduled", true);
-        status.put("lastFetch", "Auto-fetch every 5 minutes");
-        status.put("supportedIntervals", new String[]{"1h", "4h", "1d"});
-        status.put("dataSource", "CoinGecko API");
-        
+        status.put("lastFetch", lastFetchTime.get() != null ? lastFetchTime.get().toString() : "Never");
+        status.put("autoFetchIntervalMinutes", 5);
         return ResponseEntity.ok(status);
     }
     
@@ -99,21 +113,5 @@ public class FetchController {
     /**
      * String interval'i PriceEntity.IntervalType'a çevirir
      */
-    private PriceEntity.IntervalType parseIntervalType(String interval) {
-        switch (interval.toLowerCase()) {
-            case "1h":
-            case "1hour":
-            case "hourly":
-                return PriceEntity.IntervalType.ONE_HOUR;
-            case "4h":
-            case "4hours":
-                return PriceEntity.IntervalType.FOUR_HOURS;
-            case "1d":
-            case "1day":
-            case "daily":
-                return PriceEntity.IntervalType.ONE_DAY;
-            default:
-                throw new IllegalArgumentException("Invalid interval: " + interval);
-        }
-    }
+    // parseIntervalType fonksiyonunu kaldır
 } 

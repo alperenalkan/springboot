@@ -43,6 +43,9 @@ public class SignalDto {
     private BigDecimal ema12;
     private BigDecimal sma50;
     private BigDecimal sma200;
+    private BigDecimal stopLoss;
+    private BigDecimal takeProfit;
+    private String sltpExplanation;
     
     private String reasoning;
     
@@ -150,6 +153,25 @@ public class SignalDto {
     }
     public void setSma200(BigDecimal sma200) {
         this.sma200 = sma200;
+    }
+    
+    public BigDecimal getStopLoss() {
+        return stopLoss;
+    }
+    public void setStopLoss(BigDecimal stopLoss) {
+        this.stopLoss = stopLoss;
+    }
+    public BigDecimal getTakeProfit() {
+        return takeProfit;
+    }
+    public void setTakeProfit(BigDecimal takeProfit) {
+        this.takeProfit = takeProfit;
+    }
+    public String getSltpExplanation() {
+        return sltpExplanation;
+    }
+    public void setSltpExplanation(String sltpExplanation) {
+        this.sltpExplanation = sltpExplanation;
     }
     
     public String getReasoning() {

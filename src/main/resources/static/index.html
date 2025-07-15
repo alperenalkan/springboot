@@ -219,6 +219,10 @@
         <div class="header">
             <h1>🚀 Bitcoin Signal Dashboard</h1>
             <p>Real-time Bitcoin price analysis and trading signals</p>
+            <div id="topPriceBox" style="margin-top:30px;">
+                <span id="topCurrentPrice" style="font-size:3rem;font-weight:bold;">$0.00</span>
+                <span id="topUpdateTime" style="font-size:1.2rem;color:#f1c40f;margin-left:20px;">--:--:--</span>
+            </div>
         </div>
 
         <div class="dashboard">
@@ -254,6 +258,7 @@
                 <div class="signal-icon" id="signalIcon">⏸️</div>
                 <div class="signal-text" id="signalText">HOLD</div>
                 <div class="signal-reasoning" id="signalReasoning">Waiting for data...</div>
+                <div class="signal-sltp" id="signalSLTP" style="margin-top:15px;font-size:1.1rem;color:#34495e;"></div>
             </div>
 
             <div class="chart-container">
@@ -443,6 +448,20 @@
             });
             
             document.getElementById('currentPrice').textContent = formattedPrice;
+            document.getElementById('topCurrentPrice').textContent = formattedPrice;
+            
+            // Update time
+            if (data.timestamp) {
+                // Zamanı kullanıcının yerel saatine göre göster
+                let date;
+                if (typeof data.timestamp === 'string' && !data.timestamp.endsWith('Z')) {
+                    date = new Date(data.timestamp.replace(' ', 'T') + 'Z');
+                } else {
+                    date = new Date(data.timestamp);
+                }
+                const timeStr = date.toLocaleTimeString([], { hour12: false });
+                document.getElementById('topUpdateTime').textContent = timeStr;
+            }
             
             // Calculate price change
             if (lastPrice > 0) {
@@ -466,6 +485,7 @@
             const signalIcon = document.getElementById('signalIcon');
             const signalText = document.getElementById('signalText');
             const signalReasoning = document.getElementById('signalReasoning');
+            const signalSLTP = document.getElementById('signalSLTP');
             
             // Remove all signal classes
             signalIcon.className = 'signal-icon';
@@ -490,6 +510,19 @@
             }
             
             signalReasoning.textContent = signal.reasoning || 'No reasoning available';
+            // SL/TP göster
+            let sltpText = '';
+            if (signal.stopLoss !== undefined && signal.stopLoss !== null) {
+                sltpText += `Stop Loss: $${parseFloat(signal.stopLoss).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+            }
+            if (signal.takeProfit !== undefined && signal.takeProfit !== null) {
+                if (sltpText.length > 0) sltpText += ' | ';
+                sltpText += `Take Profit: $${parseFloat(signal.takeProfit).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+            }
+            if (signal.sltpExplanation) {
+                sltpText += `<br><span style='font-size:0.95em;color:#888;'>${signal.sltpExplanation}</span>`;
+            }
+            signalSLTP.innerHTML = sltpText;
         }
 
         function updateIndicators(signal) {

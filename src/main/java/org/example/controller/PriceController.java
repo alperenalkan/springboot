@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -26,13 +27,16 @@ public class PriceController {
      * GET /api/price/{interval} - Belirli periyottaki fiyat verilerini döner
      */
     @GetMapping("/price/{interval}")
-    public ResponseEntity<List<PriceDto>> getPriceData(@PathVariable String interval) {
+    public ResponseEntity<Object> getPriceData(@PathVariable String interval) {
         try {
-            PriceEntity.IntervalType intervalType = parseIntervalType(interval);
+            PriceEntity.IntervalType intervalType = PriceEntity.IntervalType.fromString(interval);
             List<PriceDto> priceData = priceService.getPriceData(intervalType);
             return ResponseEntity.ok(priceData);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "error",
+                "message", "Invalid interval: " + interval
+            ));
         }
     }
     
@@ -40,15 +44,24 @@ public class PriceController {
      * GET /api/price/{interval}/latest/{limit} - Son N kaydı getirir
      */
     @GetMapping("/price/{interval}/latest/{limit}")
-    public ResponseEntity<List<PriceDto>> getLatestPriceData(
+    public ResponseEntity<Object> getLatestPriceData(
             @PathVariable String interval,
             @PathVariable int limit) {
         try {
-            PriceEntity.IntervalType intervalType = parseIntervalType(interval);
+            if (limit <= 0 || limit > 1000) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "error",
+                    "message", "Limit must be between 1 and 1000."
+                ));
+            }
+            PriceEntity.IntervalType intervalType = PriceEntity.IntervalType.fromString(interval);
             List<PriceDto> priceData = priceService.getLatestPriceData(intervalType, limit);
             return ResponseEntity.ok(priceData);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "error",
+                "message", "Invalid interval: " + interval
+            ));
         }
     }
     
@@ -56,13 +69,16 @@ public class PriceController {
      * GET /api/signal/{interval} - İndikatöre göre sinyal döner
      */
     @GetMapping("/signal/{interval}")
-    public ResponseEntity<SignalDto> getSignal(@PathVariable String interval) {
+    public ResponseEntity<Object> getSignal(@PathVariable String interval) {
         try {
-            PriceEntity.IntervalType intervalType = parseIntervalType(interval);
+            PriceEntity.IntervalType intervalType = PriceEntity.IntervalType.fromString(interval);
             SignalDto signal = priceService.generateSignal(intervalType);
             return ResponseEntity.ok(signal);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "error",
+                "message", "Invalid interval: " + interval
+            ));
         }
     }
     
@@ -70,16 +86,25 @@ public class PriceController {
      * GET /api/price/{interval}/range - Belirli tarih aralığındaki verileri getirir
      */
     @GetMapping("/price/{interval}/range")
-    public ResponseEntity<List<PriceDto>> getPriceDataByRange(
+    public ResponseEntity<Object> getPriceDataByRange(
             @PathVariable String interval,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
         try {
-            PriceEntity.IntervalType intervalType = parseIntervalType(interval);
+            if (startDate.isAfter(endDate)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "error",
+                    "message", "startDate must be before endDate."
+                ));
+            }
+            PriceEntity.IntervalType intervalType = PriceEntity.IntervalType.fromString(interval);
             List<PriceDto> priceData = priceService.getPriceDataByDateRange(intervalType, startDate, endDate);
             return ResponseEntity.ok(priceData);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "error",
+                "message", "Invalid interval: " + interval
+            ));
         }
     }
     
@@ -87,9 +112,9 @@ public class PriceController {
      * GET /api/price/{interval}/latest - En son fiyat verisini getirir
      */
     @GetMapping("/price/{interval}/latest")
-    public ResponseEntity<PriceDto> getLatestPrice(@PathVariable String interval) {
+    public ResponseEntity<Object> getLatestPrice(@PathVariable String interval) {
         try {
-            PriceEntity.IntervalType intervalType = parseIntervalType(interval);
+            PriceEntity.IntervalType intervalType = PriceEntity.IntervalType.fromString(interval);
             PriceDto latestPrice = priceService.getLatestPrice(intervalType);
             if (latestPrice != null) {
                 return ResponseEntity.ok(latestPrice);
@@ -97,7 +122,10 @@ public class PriceController {
                 return ResponseEntity.notFound().build();
             }
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "error",
+                "message", "Invalid interval: " + interval
+            ));
         }
     }
     
@@ -105,28 +133,16 @@ public class PriceController {
      * GET /api/health - Uygulama sağlık kontrolü
      */
     @GetMapping("/health")
-    public ResponseEntity<String> health() {
-        return ResponseEntity.ok("Bitcoin Signal App is running!");
+    public ResponseEntity<Map<String, Object>> health() {
+        Map<String, Object> status = new java.util.HashMap<>();
+        status.put("message", "Bitcoin Signal App is running!");
+        status.put("timestamp", java.time.LocalDateTime.now());
+        status.put("version", "1.0.0");
+        return ResponseEntity.ok(status);
     }
     
     /**
      * String interval'i PriceEntity.IntervalType'a çevirir
      */
-    private PriceEntity.IntervalType parseIntervalType(String interval) {
-        switch (interval.toLowerCase()) {
-            case "1h":
-            case "1hour":
-            case "hourly":
-                return PriceEntity.IntervalType.ONE_HOUR;
-            case "4h":
-            case "4hours":
-                return PriceEntity.IntervalType.FOUR_HOURS;
-            case "1d":
-            case "1day":
-            case "daily":
-                return PriceEntity.IntervalType.ONE_DAY;
-            default:
-                throw new IllegalArgumentException("Invalid interval: " + interval);
-        }
-    }
+    // parseIntervalType fonksiyonunu kaldır
 } 

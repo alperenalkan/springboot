@@ -19,6 +19,20 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import jakarta.annotation.PostConstruct;
+import java.time.Duration;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import reactor.netty.http.client.HttpClient;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.reactive.function.client.WebClient.Builder;
+
+class DataFetchException extends RuntimeException {
+    public DataFetchException(String msg, Throwable cause) { super(msg, cause); }
+    public DataFetchException(String msg) { super(msg); }
+}
+class ApiTimeoutException extends RuntimeException {
+    public ApiTimeoutException(String msg, Throwable cause) { super(msg, cause); }
+    public ApiTimeoutException(String msg) { super(msg); }
+}
 
 @Service
 public class FetchService {
@@ -34,17 +48,20 @@ public class FetchService {
     private WebClient webClient;
     private final PriceRepository priceRepository;
     private final ObjectMapper objectMapper;
-    
-    public FetchService(PriceRepository priceRepository) {
+    private final WebClient.Builder webClientBuilder;
+    @Autowired
+    public FetchService(PriceRepository priceRepository, WebClient.Builder webClientBuilder) {
         this.priceRepository = priceRepository;
         this.objectMapper = new ObjectMapper();
-        // Do not initialize webClient here
+        this.webClientBuilder = webClientBuilder;
     }
 
     @PostConstruct
     public void initWebClient() {
-        this.webClient = WebClient.builder()
+        this.webClient = webClientBuilder
             .baseUrl(baseUrl)
+            .clientConnector(new ReactorClientHttpConnector(HttpClient.create()
+                .responseTimeout(Duration.ofMillis(timeout))))
             .build();
     }
     
@@ -54,13 +71,13 @@ public class FetchService {
     public void fetchAndSavePriceData(PriceEntity.IntervalType intervalType) {
         try {
             logger.info("Fetching price data for interval: {}", intervalType);
-            
             String days = getDaysForInterval(intervalType);
-            String url = String.format("/coins/bitcoin/market_chart?vs_currency=usd&days=%s&interval=%s", 
-                                     days, getIntervalString(intervalType));
-            
+            String apiInterval = getIntervalString(intervalType);
+            // 4H için hourly veri çekilecek
+            boolean isFourHour = intervalType == PriceEntity.IntervalType.FOUR_HOURS;
+            String url = String.format("/coins/bitcoin/market_chart?vs_currency=usd&days=%s&interval=%s",
+                                     days, isFourHour ? "hourly" : apiInterval);
             logger.info("Making request to: {}", baseUrl + url);
-            
             String response;
             try {
                 response = webClient.get()
@@ -68,39 +85,42 @@ public class FetchService {
                         .retrieve()
                         .bodyToMono(String.class)
                         .block();
-                
                 logger.info("Response received, length: {}", response != null ? response.length() : 0);
             } catch (Exception e) {
-                logger.error("WebClient request failed: {}", e.getMessage(), e);
-                throw e;
+                if (e.getMessage() != null && e.getMessage().toLowerCase().contains("timeout")) {
+                    throw new ApiTimeoutException("API timeout: " + url, e);
+                }
+                throw new DataFetchException("WebClient request failed: " + url, e);
             }
-            
             if (response != null) {
                 JsonNode rootNode = objectMapper.readTree(response);
                 JsonNode pricesNode = rootNode.get("prices");
-                
+                JsonNode volumesNode = rootNode.has("total_volumes") ? rootNode.get("total_volumes") : null;
                 logger.info("Found {} price entries in response", pricesNode.size());
-                
                 List<PriceEntity> priceEntities = new ArrayList<>();
-                
+                // Volume eşleştirme için timestamp->volume map'i oluştur
+                java.util.Map<Long, BigDecimal> volumeMap = new java.util.HashMap<>();
+                if (volumesNode != null) {
+                    for (JsonNode volNode : volumesNode) {
+                        long ts = volNode.get(0).asLong();
+                        BigDecimal vol = new BigDecimal(volNode.get(1).asText());
+                        volumeMap.put(ts, vol);
+                    }
+                }
                 for (JsonNode priceNode : pricesNode) {
                     long timestamp = priceNode.get(0).asLong();
                     BigDecimal price = new BigDecimal(priceNode.get(1).asText());
-                    
                     LocalDateTime dateTime = LocalDateTime.ofEpochSecond(timestamp / 1000, 0, ZoneOffset.UTC);
-                    
-                    logger.debug("Processing timestamp: {}, price: {}, dateTime: {}", timestamp, price, dateTime);
-                    
-                    // Sadece yeni veri ekle
-                    if (!priceRepository.existsByTimestampAndIntervalType(dateTime, intervalType)) {
+                    BigDecimal volume = volumeMap.getOrDefault(timestamp, BigDecimal.ZERO);
+                    if (!priceRepository.existsByTimestampAndIntervalType(dateTime, isFourHour ? PriceEntity.IntervalType.ONE_HOUR : intervalType)) {
                         PriceEntity entity = new PriceEntity(
                                 dateTime,
                                 price, // OHLC için aynı değer kullanıyoruz (basitleştirme)
                                 price,
                                 price,
                                 price,
-                                BigDecimal.ZERO, // Volume bilgisi yok
-                                intervalType
+                                volume,
+                                isFourHour ? PriceEntity.IntervalType.ONE_HOUR : intervalType
                         );
                         priceEntities.add(entity);
                         logger.debug("Added new entity for timestamp: {}", dateTime);
@@ -108,15 +128,30 @@ public class FetchService {
                         logger.debug("Skipped duplicate entity for timestamp: {}", dateTime);
                     }
                 }
-                
+                // Eğer 4H ise, saatlik veriden 4H OHLC barları üret
+                if (isFourHour) {
+                    List<PriceEntity> fourHourBars = new ArrayList<>();
+                    for (int i = 0; i + 3 < priceEntities.size(); i += 4) {
+                        PriceEntity o = priceEntities.get(i);
+                        PriceEntity h1 = priceEntities.get(i);
+                        PriceEntity h2 = priceEntities.get(i+1);
+                        PriceEntity h3 = priceEntities.get(i+2);
+                        PriceEntity c = priceEntities.get(i+3);
+                        BigDecimal open = o.getOpenPrice();
+                        BigDecimal high = h1.getHighPrice().max(h2.getHighPrice()).max(h3.getHighPrice()).max(c.getHighPrice());
+                        BigDecimal low = h1.getLowPrice().min(h2.getLowPrice()).min(h3.getLowPrice()).min(c.getLowPrice());
+                        BigDecimal close = c.getClosePrice();
+                        BigDecimal volume = h1.getVolume().add(h2.getVolume()).add(h3.getVolume()).add(c.getVolume());
+                        LocalDateTime ts = c.getTimestamp(); // 4H barın timestamp'i son barın zamanı
+                        fourHourBars.add(new PriceEntity(ts, open, high, low, close, volume, PriceEntity.IntervalType.FOUR_HOURS));
+                    }
+                    priceEntities = fourHourBars;
+                }
                 logger.info("Created {} new entities to save", priceEntities.size());
-                
                 if (!priceEntities.isEmpty()) {
                     logger.info("About to save {} entities to database", priceEntities.size());
                     List<PriceEntity> savedEntities = priceRepository.saveAll(priceEntities);
                     logger.info("Successfully saved {} new price records for interval: {}", savedEntities.size(), intervalType);
-                    
-                    // Verify the first saved entity
                     if (!savedEntities.isEmpty()) {
                         PriceEntity firstEntity = savedEntities.get(0);
                         logger.info("First saved entity: ID={}, timestamp={}, price={}, interval={}", 
@@ -128,13 +163,14 @@ public class FetchService {
             } else {
                 logger.warn("Response was null for interval: {}", intervalType);
             }
-            
         } catch (JsonProcessingException e) {
             logger.error("JSON processing error for interval: {}", intervalType, e);
-            throw new RuntimeException("JSON processing failed", e);
+            throw new DataFetchException("JSON processing failed", e);
+        } catch (ApiTimeoutException | DataFetchException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("Error fetching price data for interval: {}", intervalType, e);
-            throw new RuntimeException("Fetch failed", e);
+            throw new DataFetchException("Fetch failed", e);
         }
     }
     
