@@ -135,7 +135,7 @@ class IndicatorServiceTest {
             BigDecimal.valueOf(50),
             BigDecimal.valueOf(50)
         );
-        String bullishSignal = indicatorService.generateMACDSignal(bullishMACD);
+        String bullishSignal = indicatorService.generateMACDSignal(bullishMACD, BigDecimal.valueOf(-10));
         assertEquals("BUY", bullishSignal);
         
         // Düşüş sinyali
@@ -144,7 +144,7 @@ class IndicatorServiceTest {
             BigDecimal.valueOf(100),
             BigDecimal.valueOf(-50)
         );
-        String bearishSignal = indicatorService.generateMACDSignal(bearishMACD);
+        String bearishSignal = indicatorService.generateMACDSignal(bearishMACD, BigDecimal.valueOf(10));
         assertEquals("SELL", bearishSignal);
     }
     

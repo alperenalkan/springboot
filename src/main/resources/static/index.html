@@ -52,36 +52,40 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
             margin-bottom: 30px;
         }
 
         .stat-card {
             background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            border-left: 5px solid #3498db;
-            transition: transform 0.3s ease;
+            padding: 12px 10px 10px 14px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(44, 62, 80, 0.07);
+            border-left: 3px solid #3498db;
+            transition: transform 0.2s, box-shadow 0.2s;
+            min-width: 0;
         }
 
         .stat-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 24px rgba(44, 62, 80, 0.13);
         }
 
         .stat-card h3 {
             color: #7f8c8d;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            font-weight: 600;
         }
 
         .stat-card .value {
-            font-size: 2rem;
-            font-weight: bold;
+            font-size: 1.25rem;
+            font-weight: 600;
             color: #2c3e50;
+            letter-spacing: 0.5px;
         }
 
         .signal-card {
@@ -252,6 +256,156 @@
                     <h3>SMA 20</h3>
                     <div class="value" id="smaValue">$0.00</div>
                 </div>
+                <div class="stat-card">
+                    <h3>ATR</h3>
+                    <div class="value" id="atrValue">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Bollinger Upper</h3>
+                    <div class="value" id="bollingerUpper">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Bollinger Middle</h3>
+                    <div class="value" id="bollingerMiddle">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Bollinger Lower</h3>
+                    <div class="value" id="bollingerLower">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Stochastic RSI</h3>
+                    <div class="value" id="stochasticRsi">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>ADX</h3>
+                    <div class="value" id="adx">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Ichimoku Tenkan</h3>
+                    <div class="value" id="ichimokuTenkan">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Ichimoku Kijun</h3>
+                    <div class="value" id="ichimokuKijun">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Ichimoku Senkou A</h3>
+                    <div class="value" id="ichimokuSenkouA">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Ichimoku Senkou B</h3>
+                    <div class="value" id="ichimokuSenkouB">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Ichimoku Chikou</h3>
+                    <div class="value" id="ichimokuChikou">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Ichimoku Signal</h3>
+                    <div class="value" id="ichimokuSignal">HOLD</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Ichimoku Entry</h3>
+                    <div class="value" id="ichimokuEntryPrice">$0.00</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Ichimoku Stop Loss</h3>
+                    <div class="value" id="ichimokuStopLoss">$0.00</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Ichimoku Take Profit</h3>
+                    <div class="value" id="ichimokuTakeProfit">$0.00</div>
+                </div>
+                <div class="stat-card" style="grid-column: span 2;">
+                    <h3>Ichimoku Prediction</h3>
+                    <div class="value" id="ichimokuPredictionExplanation" style="font-size: 0.9rem; line-height: 1.3;">Nötr durum</div>
+                </div>
+                
+                <!-- Detaylı Analiz Kartları -->
+                <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h3>📊 Entry Price</h3>
+                    <div class="value" id="entryPrice">$0.00</div>
+                    <div class="value" id="entryExplanation" style="font-size: 0.9rem; margin-top: 10px;">-</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                    <h3>🛑 Stop Loss</h3>
+                    <div class="value" id="stopLoss">$0.00</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                    <h3>🎯 Take Profit</h3>
+                    <div class="value" id="takeProfit">$0.00</div>
+                    <div class="value" id="takeProfitExplanation" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9;">-</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
+                    <h3>📈 Buy Signals</h3>
+                    <div class="value" id="buySignals">0</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
+                    <h3>📉 Sell Signals</h3>
+                    <div class="value" id="sellSignals">0</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                    <h3>📊 RSI Analysis</h3>
+                    <div class="value" id="rsiAnalysis" style="font-size: 0.9rem; line-height: 1.4;">-</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
+                    <h3>📊 MACD Analysis</h3>
+                    <div class="value" id="macdAnalysis" style="font-size: 0.9rem; line-height: 1.4;">-</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                    <h3>📊 Trend Analysis</h3>
+                    <div class="value" id="trendAnalysis" style="font-size: 0.9rem; line-height: 1.4;">-</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
+                    <h3>📊 Bollinger Analysis</h3>
+                    <div class="value" id="bollingerAnalysis" style="font-size: 0.9rem; line-height: 1.4;">-</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                    <h3>📊 Stochastic Analysis</h3>
+                    <div class="value" id="stochasticAnalysis" style="font-size: 0.9rem; line-height: 1.4;">-</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
+                    <h3>📊 ADX Analysis</h3>
+                    <div class="value" id="adxAnalysis" style="font-size: 0.9rem; line-height: 1.4;">-</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                    <h3>📊 Ichimoku Analysis</h3>
+                    <div class="value" id="ichimokuAnalysis" style="font-size: 0.9rem; line-height: 1.4;">-</div>
+                </div>
+                <div class="stat-card" style="grid-column: span 3; grid-row: span 2; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 200px;">
+                    <h3>🎯 Detaylı TP Analizi</h3>
+                    <div class="value" id="detailedTPAnalysis" style="font-size: 1rem; line-height: 1.4; text-align: left; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; margin-top: 10px;">-</div>
+                </div>
+                
+                <!-- Market Sentiment Kartları -->
+                <div class="stat-card" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white;">
+                    <h3>😨 Fear & Greed</h3>
+                    <div class="value" id="fearGreedValue">50</div>
+                    <div class="value" id="fearGreedClassification" style="font-size: 0.9rem; margin-top: 5px;">Neutral</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #4834d4 0%, #686de0 100%); color: white;">
+                    <h3>📱 Social Sentiment</h3>
+                    <div class="value" id="sentimentValue">0.5</div>
+                    <div class="value" id="sentimentClassification" style="font-size: 0.9rem; margin-top: 5px;">Neutral</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #00b894 0%, #00cec9 100%); color: white;">
+                    <h3>🐋 Whale Movement</h3>
+                    <div class="value" id="whaleMovement">Neutral</div>
+                    <div class="value" id="whaleTransactions" style="font-size: 0.9rem; margin-top: 5px;">0</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%); color: white;">
+                    <h3>💱 Exchange Flow</h3>
+                    <div class="value" id="flowDirection">Neutral</div>
+                </div>
+                <div class="stat-card" style="grid-column: span 2; background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%); color: white;">
+                    <h3>🎭 Market Sentiment Signal</h3>
+                    <div class="value" id="sentimentSignal" style="font-size: 1.2rem;">NEUTRAL</div>
+                    <div class="value" id="sentimentExplanation" style="font-size: 0.9rem; margin-top: 10px; line-height: 1.3;">-</div>
+                </div>
+                <div class="stat-card" style="grid-column: span 2; background: linear-gradient(135deg, #fd79a8 0%, #fdcb6e 100%); color: white;">
+                    <h3>🔗 On-Chain Analysis</h3>
+                    <div class="value" id="onChainExplanation" style="font-size: 0.9rem; line-height: 1.4; text-align: left;">-</div>
+                </div>
             </div>
 
             <div class="signal-card">
@@ -259,10 +413,11 @@
                 <div class="signal-text" id="signalText">HOLD</div>
                 <div class="signal-reasoning" id="signalReasoning">Waiting for data...</div>
                 <div class="signal-sltp" id="signalSLTP" style="margin-top:15px;font-size:1.1rem;color:#34495e;"></div>
+                <div class="signal-trade-advice" id="signalTradeAdvice" style="margin-top:10px;font-size:1.2rem;font-weight:bold;color:#117a65;"></div>
             </div>
 
             <div class="chart-container">
-                <h3>Bitcoin Price Chart (Last 30 Days)</h3>
+                <h3>Bitcoin Price Chart (Last 300 Days)</h3>
                 <canvas id="priceChart"></canvas>
             </div>
         </div>
@@ -377,7 +532,7 @@
         async function fetchLatestData() {
             try {
                 showMessage('Fetching latest price data...', 'success');
-                const response = await fetch('/api/price/1d/latest/200');
+                const response = await fetch('/api/price/1d/latest/300');
                 if (!response.ok) {
                     throw new Error('Failed to fetch price data');
                 }
@@ -482,14 +637,15 @@
         function updateSignalDisplay(signal) {
             if (!signal) return;
             
+            // Klasik sinyal kartı
             const signalIcon = document.getElementById('signalIcon');
             const signalText = document.getElementById('signalText');
             const signalReasoning = document.getElementById('signalReasoning');
             const signalSLTP = document.getElementById('signalSLTP');
+            const signalTradeAdvice = document.getElementById('signalTradeAdvice');
             
             // Remove all signal classes
             signalIcon.className = 'signal-icon';
-            
             switch (signal.signalType) {
                 case 'BUY':
                     signalIcon.textContent = '📈';
@@ -508,8 +664,8 @@
                     signalText.textContent = 'HOLD';
                     break;
             }
-            
             signalReasoning.textContent = signal.reasoning || 'No reasoning available';
+            
             // SL/TP göster
             let sltpText = '';
             if (signal.stopLoss !== undefined && signal.stopLoss !== null) {
@@ -520,24 +676,297 @@
                 sltpText += `Take Profit: $${parseFloat(signal.takeProfit).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
             }
             if (signal.sltpExplanation) {
-                sltpText += `<br><span style='font-size:0.95em;color:#888;'>${signal.sltpExplanation}</span>`;
+                sltpText += `<br><span style='font-size:0.9em;color:#666;margin-top:5px;display:block;'>📊 TP Hesaplama: ${signal.sltpExplanation}</span>`;
             }
             signalSLTP.innerHTML = sltpText;
+            signalTradeAdvice.textContent = signal.tradeAdvice || '';
+            
+            // Detaylı analiz kartlarını güncelle
+            updateDetailedAnalysis(signal);
+        }
+        
+        function updateDetailedAnalysis(signal) {
+            // Entry Price kartı
+            if (signal.entryPrice !== undefined && signal.entryPrice !== null) {
+                const entryPriceElement = document.getElementById('entryPrice');
+                if (entryPriceElement) {
+                    entryPriceElement.textContent = '$' + parseFloat(signal.entryPrice).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
+                
+                const entryExplanationElement = document.getElementById('entryExplanation');
+                if (entryExplanationElement) {
+                    entryExplanationElement.textContent = signal.entryExplanation || 'Entry explanation not available';
+                }
+            }
+            
+            // Stop Loss kartı
+            if (signal.stopLoss !== undefined && signal.stopLoss !== null) {
+                const stopLossElement = document.getElementById('stopLoss');
+                if (stopLossElement) {
+                    stopLossElement.textContent = '$' + parseFloat(signal.stopLoss).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
+            }
+            
+            // Take Profit kartı
+            if (signal.takeProfit !== undefined && signal.takeProfit !== null) {
+                const takeProfitElement = document.getElementById('takeProfit');
+                if (takeProfitElement) {
+                    takeProfitElement.textContent = '$' + parseFloat(signal.takeProfit).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
+                
+                // TP açıklamasını göster
+                const takeProfitExplanationElement = document.getElementById('takeProfitExplanation');
+                if (takeProfitExplanationElement && signal.sltpExplanation) {
+                    // TP açıklamasını ayıkla
+                    let tpExplanation = signal.sltpExplanation;
+                    if (tpExplanation.includes('Take Profit:')) {
+                        tpExplanation = tpExplanation.split('Take Profit:')[1];
+                        if (tpExplanation.includes('(')) {
+                            tpExplanation = tpExplanation.split('(')[1].split(')')[0];
+                        }
+                    }
+                    takeProfitExplanationElement.textContent = tpExplanation || 'Gelişmiş TP hesaplaması';
+                }
+            }
+            
+            // Sinyal sayıları
+            if (signal.buySignals !== undefined) {
+                const buySignalsElement = document.getElementById('buySignals');
+                if (buySignalsElement) {
+                    buySignalsElement.textContent = signal.buySignals;
+                }
+            }
+            
+            if (signal.sellSignals !== undefined) {
+                const sellSignalsElement = document.getElementById('sellSignals');
+                if (sellSignalsElement) {
+                    sellSignalsElement.textContent = signal.sellSignals;
+                }
+            }
+            
+            // Analiz detayları
+            if (signal.rsiAnalysis) {
+                const rsiAnalysisElement = document.getElementById('rsiAnalysis');
+                if (rsiAnalysisElement) {
+                    rsiAnalysisElement.textContent = signal.rsiAnalysis;
+                }
+            }
+            
+            if (signal.macdAnalysis) {
+                const macdAnalysisElement = document.getElementById('macdAnalysis');
+                if (macdAnalysisElement) {
+                    macdAnalysisElement.textContent = signal.macdAnalysis;
+                }
+            }
+            
+            if (signal.trendAnalysis) {
+                const trendAnalysisElement = document.getElementById('trendAnalysis');
+                if (trendAnalysisElement) {
+                    trendAnalysisElement.textContent = signal.trendAnalysis;
+                }
+            }
+            
+            if (signal.bollingerAnalysis) {
+                const bollingerAnalysisElement = document.getElementById('bollingerAnalysis');
+                if (bollingerAnalysisElement) {
+                    bollingerAnalysisElement.textContent = signal.bollingerAnalysis;
+                }
+            }
+            
+            if (signal.stochasticAnalysis) {
+                const stochasticAnalysisElement = document.getElementById('stochasticAnalysis');
+                if (stochasticAnalysisElement) {
+                    stochasticAnalysisElement.textContent = signal.stochasticAnalysis;
+                }
+            }
+            
+            if (signal.adxAnalysis) {
+                const adxAnalysisElement = document.getElementById('adxAnalysis');
+                if (adxAnalysisElement) {
+                    adxAnalysisElement.textContent = signal.adxAnalysis;
+                }
+            }
+            
+            if (signal.ichimokuAnalysis) {
+                const ichimokuAnalysisElement = document.getElementById('ichimokuAnalysis');
+                if (ichimokuAnalysisElement) {
+                    ichimokuAnalysisElement.textContent = signal.ichimokuAnalysis;
+                }
+            }
+            
+            // Detaylı TP Analizi
+            if (signal.sltpExplanation) {
+                const detailedTPElement = document.getElementById('detailedTPAnalysis');
+                if (detailedTPElement) {
+                    let detailedText = '';
+                    if (signal.takeProfit) {
+                        detailedText += `<div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; text-align: center; background: rgba(255,255,255,0.2); padding: 10px; border-radius: 8px;">🎯 Seçilen TP: $${parseFloat(signal.takeProfit).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>`;
+                    }
+                    
+                    // TP açıklamasını parse et ve güzel göster
+                    let explanation = signal.sltpExplanation;
+                    if (explanation.includes('Take Profit:')) {
+                        explanation = explanation.split('Take Profit:')[1];
+                    }
+                    
+                    if (explanation.includes('(') && explanation.includes(')')) {
+                        let tpDetails = explanation.split('(')[1].split(')')[0];
+                        let selection = '';
+                        if (explanation.includes('Seçilen:')) {
+                            selection = explanation.split('Seçilen:')[1];
+                        }
+                        
+                        detailedText += `<div style="font-size: 1.1rem; font-weight: bold; margin-bottom: 10px;">📊 TP Seçenekleri:</div>`;
+                        
+                        // TP detaylarını ayrı ayrı göster
+                        detailedText += `<div style="margin-bottom: 8px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 5px; font-size: 0.9rem;">${tpDetails}</div>`;
+                        
+                        // TP değerlerini ayrı ayrı çıkar ve göster
+                        let tpValues = [];
+                        if (tpDetails.includes('Bollinger')) {
+                            let match = tpDetails.match(/Bollinger[^:]*:\s*([0-9,]+\.?[0-9]*)/);
+                            if (match) tpValues.push(`🔵 Bollinger: $${match[1]}`);
+                        }
+                        if (tpDetails.includes('Ichimoku')) {
+                            let match = tpDetails.match(/Ichimoku[^:]*:\s*([0-9,]+\.?[0-9]*)/);
+                            if (match) tpValues.push(`🟢 Ichimoku: $${match[1]}`);
+                        }
+                        if (tpDetails.includes('Fibonacci')) {
+                            let match = tpDetails.match(/Fibonacci[^:]*:\s*([0-9,]+\.?[0-9]*)/);
+                            if (match) tpValues.push(`🟡 Fibonacci: $${match[1]}`);
+                        }
+                        
+                        if (tpValues.length > 0) {
+                            detailedText += `<div style="margin-top: 10px; font-weight: bold;">TP Değerleri:</div>`;
+                            tpValues.forEach(value => {
+                                detailedText += `<div style="margin-bottom: 5px; padding: 5px; background: rgba(255,255,255,0.15); border-radius: 3px;">${value}</div>`;
+                            });
+                        }
+                        
+                        if (selection) {
+                            detailedText += `<div style="margin-top: 15px; font-size: 1.1rem; font-weight: bold; text-align: center; background: rgba(255,255,255,0.2); padding: 10px; border-radius: 8px;">✅ ${selection}</div>`;
+                        }
+                    } else {
+                        detailedText += `<div style="font-size: 1.1rem;">📊 Hesaplama: ${explanation}</div>`;
+                    }
+                    
+                    detailedTPElement.innerHTML = detailedText;
+                }
+            }
+            
+            // Market Sentiment güncelleme
+            updateMarketSentiment(signal);
+        }
+        
+        function updateMarketSentiment(signal) {
+            if (!signal) return;
+            
+            // Fear & Greed
+            if (signal.fearGreedValue !== undefined) {
+                const fearGreedElement = document.getElementById('fearGreedValue');
+                if (fearGreedElement) {
+                    fearGreedElement.textContent = signal.fearGreedValue.toFixed(0);
+                }
+            }
+            
+            if (signal.fearGreedClassification) {
+                const fearGreedClassElement = document.getElementById('fearGreedClassification');
+                if (fearGreedClassElement) {
+                    fearGreedClassElement.textContent = signal.fearGreedClassification;
+                }
+            }
+            
+            // Social Sentiment
+            if (signal.sentimentValue !== undefined) {
+                const sentimentElement = document.getElementById('sentimentValue');
+                if (sentimentElement) {
+                    sentimentElement.textContent = signal.sentimentValue.toFixed(2);
+                }
+            }
+            
+            if (signal.sentimentClassification) {
+                const sentimentClassElement = document.getElementById('sentimentClassification');
+                if (sentimentClassElement) {
+                    sentimentClassElement.textContent = signal.sentimentClassification;
+                }
+            }
+            
+            // Whale Movement
+            if (signal.whaleMovement) {
+                const whaleElement = document.getElementById('whaleMovement');
+                if (whaleElement) {
+                    whaleElement.textContent = signal.whaleMovement;
+                }
+            }
+            
+            if (signal.whaleTransactions !== undefined) {
+                const whaleTxElement = document.getElementById('whaleTransactions');
+                if (whaleTxElement) {
+                    whaleTxElement.textContent = signal.whaleTransactions.toFixed(0);
+                }
+            }
+            
+            // Exchange Flow
+            if (signal.flowDirection) {
+                const flowElement = document.getElementById('flowDirection');
+                if (flowElement) {
+                    flowElement.textContent = signal.flowDirection;
+                }
+            }
+            
+            // Market Sentiment Signal
+            if (signal.sentimentSignal) {
+                const sentimentSignalElement = document.getElementById('sentimentSignal');
+                if (sentimentSignalElement) {
+                    sentimentSignalElement.textContent = signal.sentimentSignal;
+                    
+                    // Renk kodlaması
+                    if (signal.sentimentSignal === 'BULLISH') {
+                        sentimentSignalElement.style.color = '#27ae60';
+                    } else if (signal.sentimentSignal === 'BEARISH') {
+                        sentimentSignalElement.style.color = '#e74c3c';
+                    } else {
+                        sentimentSignalElement.style.color = '#f39c12';
+                    }
+                }
+            }
+            
+            // Sentiment Explanation
+            if (signal.sentimentExplanation) {
+                const sentimentExplanationElement = document.getElementById('sentimentExplanation');
+                if (sentimentExplanationElement) {
+                    sentimentExplanationElement.textContent = signal.sentimentExplanation;
+                }
+            }
+            
+            // On-Chain Explanation
+            if (signal.onChainExplanation) {
+                const onChainElement = document.getElementById('onChainExplanation');
+                if (onChainElement) {
+                    onChainElement.textContent = signal.onChainExplanation;
+                }
+            }
         }
 
         function updateIndicators(signal) {
             if (!signal) return;
-            
             // Update RSI
             if (signal.rsiValue !== undefined) {
                 document.getElementById('rsiValue').textContent = signal.rsiValue.toFixed(2);
             }
-            
             // Update MACD
             if (signal.macdValue !== undefined) {
                 document.getElementById('macdValue').textContent = signal.macdValue.toFixed(8);
             }
-            
             // Update SMA
             if (signal.sma20 !== undefined) {
                 const formattedSMA = '$' + parseFloat(signal.sma20).toLocaleString('en-US', {
@@ -545,6 +974,74 @@
                     maximumFractionDigits: 2
                 });
                 document.getElementById('smaValue').textContent = formattedSMA;
+            }
+            // Update ATR
+            if (signal.atr !== undefined) {
+                document.getElementById('atrValue').textContent = signal.atr.toFixed(4);
+            }
+            // Bollinger Bands
+            if (signal.bollingerUpper !== undefined) {
+                document.getElementById('bollingerUpper').textContent = signal.bollingerUpper.toFixed(2);
+            }
+            if (signal.bollingerMiddle !== undefined) {
+                document.getElementById('bollingerMiddle').textContent = signal.bollingerMiddle.toFixed(2);
+            }
+            if (signal.bollingerLower !== undefined) {
+                document.getElementById('bollingerLower').textContent = signal.bollingerLower.toFixed(2);
+            }
+            // Stochastic RSI
+            if (signal.stochasticRsi !== undefined) {
+                document.getElementById('stochasticRsi').textContent = signal.stochasticRsi.toFixed(4);
+            }
+            // ADX
+            if (signal.adx !== undefined) {
+                document.getElementById('adx').textContent = signal.adx.toFixed(2);
+            }
+            // Ichimoku
+            if (signal.ichimokuTenkan !== undefined) {
+                document.getElementById('ichimokuTenkan').textContent = signal.ichimokuTenkan.toFixed(2);
+            }
+            if (signal.ichimokuKijun !== undefined) {
+                document.getElementById('ichimokuKijun').textContent = signal.ichimokuKijun.toFixed(2);
+            }
+            if (signal.ichimokuSenkouA !== undefined) {
+                document.getElementById('ichimokuSenkouA').textContent = signal.ichimokuSenkouA.toFixed(2);
+            }
+            if (signal.ichimokuSenkouB !== undefined) {
+                document.getElementById('ichimokuSenkouB').textContent = signal.ichimokuSenkouB.toFixed(2);
+            }
+            if (signal.ichimokuChikou !== undefined) {
+                document.getElementById('ichimokuChikou').textContent = signal.ichimokuChikou.toFixed(2);
+            }
+            // Ichimoku Signal
+            if (signal.ichimokuSignal !== undefined) {
+                document.getElementById('ichimokuSignal').textContent = signal.ichimokuSignal;
+            }
+            
+            // Ichimoku Fiyat Tahminleri
+            if (signal.ichimokuEntryPrice !== undefined && signal.ichimokuEntryPrice !== null) {
+                const entryFormatted = '$' + parseFloat(signal.ichimokuEntryPrice).toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+                document.getElementById('ichimokuEntryPrice').textContent = entryFormatted;
+            }
+            if (signal.ichimokuStopLoss !== undefined && signal.ichimokuStopLoss !== null) {
+                const slFormatted = '$' + parseFloat(signal.ichimokuStopLoss).toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+                document.getElementById('ichimokuStopLoss').textContent = slFormatted;
+            }
+            if (signal.ichimokuTakeProfit !== undefined && signal.ichimokuTakeProfit !== null) {
+                const tpFormatted = '$' + parseFloat(signal.ichimokuTakeProfit).toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+                document.getElementById('ichimokuTakeProfit').textContent = tpFormatted;
+            }
+            if (signal.ichimokuPredictionExplanation !== undefined) {
+                document.getElementById('ichimokuPredictionExplanation').textContent = signal.ichimokuPredictionExplanation;
             }
         }
 

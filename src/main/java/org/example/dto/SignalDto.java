@@ -46,6 +46,54 @@ public class SignalDto {
     private BigDecimal stopLoss;
     private BigDecimal takeProfit;
     private String sltpExplanation;
+    private BigDecimal atr;
+    private BigDecimal bollingerUpper;
+    private BigDecimal bollingerMiddle;
+    private BigDecimal bollingerLower;
+    private BigDecimal stochasticRsi;
+    private BigDecimal adx;
+    private BigDecimal ichimokuTenkan;
+    private BigDecimal ichimokuKijun;
+    private BigDecimal ichimokuSenkouA;
+    private BigDecimal ichimokuSenkouB;
+    private BigDecimal ichimokuChikou;
+    private String ichimokuSignal;
+    private BigDecimal ichimokuEntryPrice;
+    private BigDecimal ichimokuStopLoss;
+    private BigDecimal ichimokuTakeProfit;
+    private String ichimokuPredictionExplanation;
+    private String aggressiveSignal;
+    private String tradeAdvice;
+    
+    private BigDecimal altTakeProfit;
+    private BigDecimal altStopLoss;
+    private String altSltpExplanation;
+    
+    // Detaylı analiz alanları
+    private BigDecimal entryPrice;
+    private String entryExplanation;
+    private int buySignals;
+    private int sellSignals;
+    private String rsiAnalysis;
+    private String macdAnalysis;
+    private String trendAnalysis;
+    private String bollingerAnalysis;
+    private String stochasticAnalysis;
+    private String adxAnalysis;
+    private String ichimokuAnalysis;
+    
+    // Market Sentiment alanları
+    private BigDecimal fearGreedValue;
+    private String fearGreedClassification;
+    private String fearGreedDescription;
+    private BigDecimal sentimentValue;
+    private String sentimentClassification;
+    private String sentimentExplanation;
+    private BigDecimal whaleTransactions;
+    private String whaleMovement;
+    private String flowDirection;
+    private String onChainExplanation;
+    private String sentimentSignal;
     
     private String reasoning;
     
@@ -174,6 +222,59 @@ public class SignalDto {
         this.sltpExplanation = sltpExplanation;
     }
     
+    public BigDecimal getAtr() {
+        return atr;
+    }
+    public void setAtr(BigDecimal atr) {
+        this.atr = atr;
+    }
+    
+    public BigDecimal getBollingerUpper() { return bollingerUpper; }
+    public void setBollingerUpper(BigDecimal v) { this.bollingerUpper = v; }
+    public BigDecimal getBollingerMiddle() { return bollingerMiddle; }
+    public void setBollingerMiddle(BigDecimal v) { this.bollingerMiddle = v; }
+    public BigDecimal getBollingerLower() { return bollingerLower; }
+    public void setBollingerLower(BigDecimal v) { this.bollingerLower = v; }
+    public BigDecimal getStochasticRsi() { return stochasticRsi; }
+    public void setStochasticRsi(BigDecimal v) { this.stochasticRsi = v; }
+    public BigDecimal getAdx() { return adx; }
+    public void setAdx(BigDecimal v) { this.adx = v; }
+    public BigDecimal getIchimokuTenkan() { return ichimokuTenkan; }
+    public void setIchimokuTenkan(BigDecimal v) { this.ichimokuTenkan = v; }
+    public BigDecimal getIchimokuKijun() { return ichimokuKijun; }
+    public void setIchimokuKijun(BigDecimal v) { this.ichimokuKijun = v; }
+    public BigDecimal getIchimokuSenkouA() { return ichimokuSenkouA; }
+    public void setIchimokuSenkouA(BigDecimal v) { this.ichimokuSenkouA = v; }
+    public BigDecimal getIchimokuSenkouB() { return ichimokuSenkouB; }
+    public void setIchimokuSenkouB(BigDecimal v) { this.ichimokuSenkouB = v; }
+    public BigDecimal getIchimokuChikou() { return ichimokuChikou; }
+    public void setIchimokuChikou(BigDecimal v) { this.ichimokuChikou = v; }
+    
+    public String getIchimokuSignal() { return ichimokuSignal; }
+    public void setIchimokuSignal(String v) { this.ichimokuSignal = v; }
+    
+    public BigDecimal getIchimokuEntryPrice() { return ichimokuEntryPrice; }
+    public void setIchimokuEntryPrice(BigDecimal v) { this.ichimokuEntryPrice = v; }
+    
+    public BigDecimal getIchimokuStopLoss() { return ichimokuStopLoss; }
+    public void setIchimokuStopLoss(BigDecimal v) { this.ichimokuStopLoss = v; }
+    
+    public BigDecimal getIchimokuTakeProfit() { return ichimokuTakeProfit; }
+    public void setIchimokuTakeProfit(BigDecimal v) { this.ichimokuTakeProfit = v; }
+    
+    public String getIchimokuPredictionExplanation() { return ichimokuPredictionExplanation; }
+    public void setIchimokuPredictionExplanation(String v) { this.ichimokuPredictionExplanation = v; }
+    
+    public String getAggressiveSignal() { return aggressiveSignal; }
+    public void setAggressiveSignal(String aggressiveSignal) { this.aggressiveSignal = aggressiveSignal; }
+    
+    public BigDecimal getAltTakeProfit() { return altTakeProfit; }
+    public void setAltTakeProfit(BigDecimal v) { this.altTakeProfit = v; }
+    public BigDecimal getAltStopLoss() { return altStopLoss; }
+    public void setAltStopLoss(BigDecimal v) { this.altStopLoss = v; }
+    public String getAltSltpExplanation() { return altSltpExplanation; }
+    public void setAltSltpExplanation(String v) { this.altSltpExplanation = v; }
+    
     public String getReasoning() {
         return reasoning;
     }
@@ -181,6 +282,77 @@ public class SignalDto {
     public void setReasoning(String reasoning) {
         this.reasoning = reasoning;
     }
+
+    public String getTradeAdvice() { return tradeAdvice; }
+    public void setTradeAdvice(String v) { this.tradeAdvice = v; }
+    
+    // Detaylı analiz getter/setter metodları
+    public BigDecimal getEntryPrice() { return entryPrice; }
+    public void setEntryPrice(BigDecimal entryPrice) { this.entryPrice = entryPrice; }
+    
+    public String getEntryExplanation() { return entryExplanation; }
+    public void setEntryExplanation(String entryExplanation) { this.entryExplanation = entryExplanation; }
+    
+    public int getBuySignals() { return buySignals; }
+    public void setBuySignals(int buySignals) { this.buySignals = buySignals; }
+    
+    public int getSellSignals() { return sellSignals; }
+    public void setSellSignals(int sellSignals) { this.sellSignals = sellSignals; }
+    
+    public String getRsiAnalysis() { return rsiAnalysis; }
+    public void setRsiAnalysis(String rsiAnalysis) { this.rsiAnalysis = rsiAnalysis; }
+    
+    public String getMacdAnalysis() { return macdAnalysis; }
+    public void setMacdAnalysis(String macdAnalysis) { this.macdAnalysis = macdAnalysis; }
+    
+    public String getTrendAnalysis() { return trendAnalysis; }
+    public void setTrendAnalysis(String trendAnalysis) { this.trendAnalysis = trendAnalysis; }
+    
+    public String getBollingerAnalysis() { return bollingerAnalysis; }
+    public void setBollingerAnalysis(String bollingerAnalysis) { this.bollingerAnalysis = bollingerAnalysis; }
+    
+    public String getStochasticAnalysis() { return stochasticAnalysis; }
+    public void setStochasticAnalysis(String stochasticAnalysis) { this.stochasticAnalysis = stochasticAnalysis; }
+    
+    public String getAdxAnalysis() { return adxAnalysis; }
+    public void setAdxAnalysis(String adxAnalysis) { this.adxAnalysis = adxAnalysis; }
+    
+    public String getIchimokuAnalysis() { return ichimokuAnalysis; }
+    public void setIchimokuAnalysis(String ichimokuAnalysis) { this.ichimokuAnalysis = ichimokuAnalysis; }
+    
+    // Market Sentiment getters and setters
+    public BigDecimal getFearGreedValue() { return fearGreedValue; }
+    public void setFearGreedValue(BigDecimal fearGreedValue) { this.fearGreedValue = fearGreedValue; }
+    
+    public String getFearGreedClassification() { return fearGreedClassification; }
+    public void setFearGreedClassification(String fearGreedClassification) { this.fearGreedClassification = fearGreedClassification; }
+    
+    public String getFearGreedDescription() { return fearGreedDescription; }
+    public void setFearGreedDescription(String fearGreedDescription) { this.fearGreedDescription = fearGreedDescription; }
+    
+    public BigDecimal getSentimentValue() { return sentimentValue; }
+    public void setSentimentValue(BigDecimal sentimentValue) { this.sentimentValue = sentimentValue; }
+    
+    public String getSentimentClassification() { return sentimentClassification; }
+    public void setSentimentClassification(String sentimentClassification) { this.sentimentClassification = sentimentClassification; }
+    
+    public String getSentimentExplanation() { return sentimentExplanation; }
+    public void setSentimentExplanation(String sentimentExplanation) { this.sentimentExplanation = sentimentExplanation; }
+    
+    public BigDecimal getWhaleTransactions() { return whaleTransactions; }
+    public void setWhaleTransactions(BigDecimal whaleTransactions) { this.whaleTransactions = whaleTransactions; }
+    
+    public String getWhaleMovement() { return whaleMovement; }
+    public void setWhaleMovement(String whaleMovement) { this.whaleMovement = whaleMovement; }
+    
+    public String getFlowDirection() { return flowDirection; }
+    public void setFlowDirection(String flowDirection) { this.flowDirection = flowDirection; }
+    
+    public String getOnChainExplanation() { return onChainExplanation; }
+    public void setOnChainExplanation(String onChainExplanation) { this.onChainExplanation = onChainExplanation; }
+    
+    public String getSentimentSignal() { return sentimentSignal; }
+    public void setSentimentSignal(String sentimentSignal) { this.sentimentSignal = sentimentSignal; }
     
     @Override
     public String toString() {
@@ -197,7 +369,11 @@ public class SignalDto {
                 ", sma50=" + sma50 +
                 ", sma200=" + sma200 +
                 ", ema12=" + ema12 +
+                ", altTakeProfit=" + altTakeProfit +
+                ", altStopLoss=" + altStopLoss +
+                ", altSltpExplanation='" + altSltpExplanation + '\'' +
                 ", reasoning='" + reasoning + '\'' +
+                ", tradeAdvice='" + tradeAdvice + '\'' +
                 '}';
     }
 } 
