@@ -466,7 +466,7 @@
 
             <div class="chart-container">
                 <h3>Bitcoin Price Chart (Last 300 Days)</h3>
-                <button class="btn btn-primary" id="openChartModalBtn" onclick="openChartModal()" style="float:right;margin-bottom:10px;" disabled>Grafiği Büyüt</button>
+                <button class="btn btn-primary" id="openChartModalBtn" onclick="window.open('fullchart.html', '_blank')" style="float:right;margin-bottom:10px;" disabled>Grafiği Büyüt</button>
                 <canvas id="priceChart"></canvas>
             </div>
             <!-- Modal -->
@@ -474,6 +474,11 @@
                 <div class="modal-content">
                     <button class="modal-close" onclick="closeChartModal()">&times;</button>
                     <h3 style="margin-bottom:10px;">Bitcoin Price Chart (Full Screen)</h3>
+                    <div style="margin-bottom:10px; color:#555; font-size:1rem; background:#f1f1f1; padding:8px 14px; border-radius:8px;">
+                        <b>Zoom:</b> Mouse tekerleği ile yakınlaştır/uzaklaştır.<br>
+                        <b>Pan:</b> Mouse ile grafiği sağa-sola sürükle.<br>
+                        <b>Reset Zoom:</b> Aşağıdaki butona tıkla.
+                    </div>
                     <button class="btn btn-primary" onclick="resetZoomModal()">Reset Zoom</button>
                     <canvas id="modalPriceChart" width="1200" height="700" style="width:90vw;height:70vh;max-width:1200px;max-height:700px;min-width:600px;min-height:400px;"></canvas>
                 </div>
@@ -602,7 +607,7 @@
                             pan: {
                                 enabled: true,
                                 mode: 'x',
-                                modifierKey: 'ctrl',
+                                // modifierKey: 'ctrl', // kaldırıldı
                             },
                             zoom: {
                                 wheel: { enabled: true },
@@ -1205,7 +1210,7 @@
         function closeChartModal() {
             const modal = document.getElementById('chartModal');
             modal.style.display = 'none';
-            if (modalPriceChart) { modalPriceChart.destroy(); modalPriceChart = null; }
+            if (modalPriceChart) modalPriceChart.destroy(), modalPriceChart = null;
             // Modal canvas'ı DOM'dan kaldır
             const oldCanvas = document.getElementById('modalPriceChart');
             if (oldCanvas) oldCanvas.remove();
@@ -1214,7 +1219,8 @@
             if (window['chartjs-plugin-zoom']) {
                 Chart.register(window['chartjs-plugin-zoom']);
             }
-            const ctx = document.getElementById('modalPriceChart').getContext('2d');
+            const canvas = document.getElementById('modalPriceChart');
+            const ctx = canvas.getContext('2d');
             // Canvas'ı temizle
             ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
             // Ana grafikteki verileri kopyala
@@ -1227,13 +1233,23 @@
                     plugins: {
                         legend: { display: true, position: 'top' },
                         zoom: {
-                            pan: { enabled: true, mode: 'x', modifierKey: 'ctrl' },
+                            pan: { enabled: true, mode: 'xy' },
                             zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }
                         }
                     },
                     scales: priceChart.options.scales,
                     elements: { point: { radius: 2, hoverRadius: 5 } }
                 }
+            });
+            // Mouse ile pan sırasında sayfa scroll'unu engelle
+            canvas.addEventListener('mousedown', function(e) {
+                document.body.style.overflow = 'hidden';
+            });
+            canvas.addEventListener('mouseup', function(e) {
+                document.body.style.overflow = '';
+            });
+            canvas.addEventListener('mouseleave', function(e) {
+                document.body.style.overflow = '';
             });
         }
         function resetZoomModal() {
