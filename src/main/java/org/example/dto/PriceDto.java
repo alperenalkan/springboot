@@ -24,6 +24,12 @@ public class PriceDto {
     private BigDecimal sma50;
     private BigDecimal sma200;
     
+    private BigDecimal superTrend;
+    private BigDecimal vwap;
+    
+    private BigDecimal bollingerUpper;
+    private BigDecimal bollingerLower;
+    
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
     
@@ -126,6 +132,17 @@ public class PriceDto {
         this.sma200 = sma200;
     }
     
+    public BigDecimal getSuperTrend() { return superTrend; }
+    public void setSuperTrend(BigDecimal superTrend) { this.superTrend = superTrend; }
+    
+    public BigDecimal getVwap() { return vwap; }
+    public void setVwap(BigDecimal vwap) { this.vwap = vwap; }
+    
+    public BigDecimal getBollingerUpper() { return bollingerUpper; }
+    public void setBollingerUpper(BigDecimal bollingerUpper) { this.bollingerUpper = bollingerUpper; }
+    public BigDecimal getBollingerLower() { return bollingerLower; }
+    public void setBollingerLower(BigDecimal bollingerLower) { this.bollingerLower = bollingerLower; }
+    
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -148,6 +165,10 @@ public class PriceDto {
                 ", sma20=" + sma20 +
                 ", sma50=" + sma50 +
                 ", sma200=" + sma200 +
+                ", superTrend=" + superTrend +
+                ", vwap=" + vwap +
+                ", bollingerUpper=" + bollingerUpper +
+                ", bollingerLower=" + bollingerLower +
                 ", createdAt=" + createdAt +
                 '}';
     }

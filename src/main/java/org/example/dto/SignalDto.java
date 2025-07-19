@@ -97,6 +97,15 @@ public class SignalDto {
     
     private String reasoning;
     
+    // SuperTrend ve VWAP
+    private java.math.BigDecimal superTrend;
+    private java.math.BigDecimal vwap;
+
+    public java.math.BigDecimal getSuperTrend() { return superTrend; }
+    public void setSuperTrend(java.math.BigDecimal superTrend) { this.superTrend = superTrend; }
+    public java.math.BigDecimal getVwap() { return vwap; }
+    public void setVwap(java.math.BigDecimal vwap) { this.vwap = vwap; }
+    
     // Constructors
     public SignalDto() {}
     

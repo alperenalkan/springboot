@@ -587,6 +587,69 @@ public class IndicatorService {
     }
     
     /**
+     * VWAP (Volume Weighted Average Price) hesaplar
+     */
+    public BigDecimal calculateVWAP(List<PriceEntity> prices) {
+        if (prices == null || prices.isEmpty()) return BigDecimal.ZERO;
+        BigDecimal cumulativePV = BigDecimal.ZERO;
+        BigDecimal cumulativeVolume = BigDecimal.ZERO;
+        for (PriceEntity p : prices) {
+            BigDecimal typicalPrice = p.getHighPrice().add(p.getLowPrice()).add(p.getClosePrice()).divide(BigDecimal.valueOf(3), 8, RoundingMode.HALF_UP);
+            cumulativePV = cumulativePV.add(typicalPrice.multiply(p.getVolume()));
+            cumulativeVolume = cumulativeVolume.add(p.getVolume());
+        }
+        if (cumulativeVolume.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO;
+        return cumulativePV.divide(cumulativeVolume, 8, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Klasik SuperTrend algoritması: geçmiş barların trendini ve bandını takip eder
+     * Son barın SuperTrend değeri ve trend yönü döner (uptrend: destek bandı, downtrend: direnç bandı)
+     */
+    public BigDecimal calculateSuperTrend(List<PriceEntity> prices, int atrPeriod, double multiplier) {
+        if (prices == null || prices.size() <= atrPeriod) return BigDecimal.ZERO;
+        int n = prices.size();
+        BigDecimal[] upperBand = new BigDecimal[n];
+        BigDecimal[] lowerBand = new BigDecimal[n];
+        BigDecimal[] superTrend = new BigDecimal[n];
+        boolean[] trendUp = new boolean[n];
+        // ATR hesapla
+        BigDecimal atr = calculateATR(prices, atrPeriod);
+        for (int i = 0; i < n; i++) {
+            PriceEntity p = prices.get(i);
+            BigDecimal hl2 = p.getHighPrice().add(p.getLowPrice()).divide(BigDecimal.valueOf(2), 8, RoundingMode.HALF_UP);
+            upperBand[i] = hl2.add(atr.multiply(BigDecimal.valueOf(multiplier)));
+            lowerBand[i] = hl2.subtract(atr.multiply(BigDecimal.valueOf(multiplier)));
+        }
+        // İlk bar için trend yukarı kabul et
+        superTrend[0] = lowerBand[0];
+        trendUp[0] = true;
+        for (int i = 1; i < n; i++) {
+            // Önceki SuperTrend ve trend
+            BigDecimal prevSuper = superTrend[i-1];
+            boolean prevUp = trendUp[i-1];
+            // Şu anki fiyat
+            BigDecimal close = prices.get(i).getClosePrice();
+            // Trend değişimi kontrolü
+            if (close.compareTo(upperBand[i]) > 0) {
+                trendUp[i] = true;
+            } else if (close.compareTo(lowerBand[i]) < 0) {
+                trendUp[i] = false;
+            } else {
+                trendUp[i] = prevUp;
+            }
+            // SuperTrend bandı güncelle
+            if (trendUp[i]) {
+                superTrend[i] = lowerBand[i].max(prevSuper);
+            } else {
+                superTrend[i] = upperBand[i].min(prevSuper);
+            }
+        }
+        // Son barın SuperTrend değeri
+        return superTrend[n-1];
+    }
+    
+    /**
      * RSI sinyali üretir (gelişmiş):
      * - 30 altı: BUY
      * - 70 üstü: SELL

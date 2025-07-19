@@ -91,6 +91,32 @@ public class PriceService {
                 dto.setSma200(BigDecimal.ZERO);
             }
             
+            // SuperTrend - son 10 bar ile hesapla (en az 10 bar olmalı)
+            if (i >= 9) {
+                List<PriceEntity> stList = dailyEntities.subList(i - 9, i + 1);
+                dto.setSuperTrend(indicatorService.calculateSuperTrend(stList, 10, 3.0));
+            } else {
+                dto.setSuperTrend(BigDecimal.ZERO);
+            }
+            // VWAP - tüm geçmiş barlar ile hesapla (veya son 20 bar)
+            if (i >= 1) {
+                List<PriceEntity> vwapList = dailyEntities.subList(0, i + 1);
+                dto.setVwap(indicatorService.calculateVWAP(vwapList));
+            } else {
+                dto.setVwap(BigDecimal.ZERO);
+            }
+            
+            // Bollinger Bands - son 20 bar ile hesapla (en az 20 bar olmalı)
+            if (i >= 19) {
+                List<PriceEntity> bollList = dailyEntities.subList(i - 19, i + 1);
+                IndicatorService.BollingerBandsResult boll = indicatorService.calculateBollingerBands(bollList, 20, 2.0);
+                dto.setBollingerUpper(boll.upper);
+                dto.setBollingerLower(boll.lower);
+            } else {
+                dto.setBollingerUpper(BigDecimal.ZERO);
+                dto.setBollingerLower(BigDecimal.ZERO);
+            }
+            
             dtos.add(dto);
         }
         return dtos;
@@ -135,6 +161,9 @@ public class PriceService {
         BigDecimal stochasticRsi = indicatorService.calculateStochasticRSI(prices, 14);
         BigDecimal adx = indicatorService.calculateADX(prices, 14);
         IndicatorService.IchimokuResult ichimoku = indicatorService.calculateIchimoku(prices);
+        // SuperTrend ve VWAP
+        BigDecimal vwap = indicatorService.calculateVWAP(prices);
+        BigDecimal superTrend = indicatorService.calculateSuperTrend(prices, 10, 3.0);
         
         // --- Detaylı Analiz ---
         DetailedAnalysisResult detailedAnalysis = performDetailedAnalysis(rsi, macd, currentPrice, sma20, sma50, sma200, macdSignal, atr, boll, stochasticRsi, adx, ichimoku, prices);
@@ -169,6 +198,9 @@ public class PriceService {
         signalDto.setIchimokuSenkouA(ichimoku.senkouA);
         signalDto.setIchimokuSenkouB(ichimoku.senkouB);
         signalDto.setIchimokuChikou(ichimoku.chikou);
+        // SuperTrend ve VWAP'i ekle
+        signalDto.setVwap(vwap);
+        signalDto.setSuperTrend(superTrend);
         
         // Ichimoku sinyali ve fiyat tahminleri hesapla
         IndicatorService.IchimokuSignalResult ichimokuResult = indicatorService.generateIchimokuSignalWithPredictions(ichimoku, currentPrice);
@@ -557,6 +589,40 @@ public class PriceService {
             ichimokuAnalysis += "Hesaplanamadı";
         }
         
+        // SuperTrend analizi
+        BigDecimal superTrend = indicatorService.calculateSuperTrend(prices, 10, 3.0);
+        String superTrendAnalysis = "SuperTrend: ";
+        if (superTrend != null && superTrend.compareTo(BigDecimal.ZERO) != 0) {
+            if (currentPrice.compareTo(superTrend) > 0) {
+                buySignals++;
+                superTrendAnalysis += "Uptrend (AL sinyali)";
+            } else if (currentPrice.compareTo(superTrend) < 0) {
+                sellSignals++;
+                superTrendAnalysis += "Downtrend (SAT sinyali)";
+            } else {
+                superTrendAnalysis += "Nötr";
+            }
+        } else {
+            superTrendAnalysis += "Hesaplanamadı";
+        }
+        
+        // VWAP analizi
+        BigDecimal vwap = indicatorService.calculateVWAP(prices);
+        String vwapAnalysis = "VWAP: ";
+        if (vwap != null && vwap.compareTo(BigDecimal.ZERO) != 0) {
+            if (currentPrice.compareTo(vwap) > 0) {
+                buySignals++;
+                vwapAnalysis += "Fiyat VWAP'in üstünde (AL sinyali)";
+            } else if (currentPrice.compareTo(vwap) < 0) {
+                sellSignals++;
+                vwapAnalysis += "Fiyat VWAP'in altında (SAT sinyali)";
+            } else {
+                vwapAnalysis += "Fiyat VWAP'e eşit (Nötr)";
+            }
+        } else {
+            vwapAnalysis += "Hesaplanamadı";
+        }
+        
         // Trend analizi (SMA'lar)
         String trendAnalysis = "";
         if (sma20 != null && sma50 != null && sma200 != null) {
@@ -716,14 +782,16 @@ public class PriceService {
         }
         
         // Genel açıklama - tüm indikatörleri dahil et
-        String reasoning = String.format("Analiz Sonucu: %d AL sinyali, %d SAT sinyali. %s | %s | %s | %s | %s | %s", 
-                                       buySignals, sellSignals, rsiAnalysis, macdAnalysis, bollingerAnalysis, 
-                                       stochasticAnalysis, adxAnalysis, ichimokuAnalysis);
+        StringBuilder reasoning = new StringBuilder();
+        reasoning.append("Analiz Sonucu: ").append(buySignals).append(" AL sinyali, ").append(sellSignals).append(" SAT sinyali. ");
+        reasoning.append(rsiAnalysis).append(" | ").append(macdAnalysis).append(" | ").append(bollingerAnalysis).append(" | ");
+        reasoning.append(stochasticAnalysis).append(" | ").append(adxAnalysis).append(" | ").append(ichimokuAnalysis).append(" | ");
+        reasoning.append(superTrendAnalysis).append(" | ").append(vwapAnalysis);
         
-        return new DetailedAnalysisResult(signal, entryPrice, stopLoss, takeProfit, reasoning, 
-                                         entryExplanation, sltpExplanation, buySignals, sellSignals,
-                                         rsiAnalysis, macdAnalysis, trendAnalysis, bollingerAnalysis, 
-                                         stochasticAnalysis, adxAnalysis, ichimokuAnalysis);
+        return new DetailedAnalysisResult(
+            signal, entryPrice, stopLoss, takeProfit, reasoning.toString(), entryExplanation, sltpExplanation,
+            buySignals, sellSignals, rsiAnalysis, macdAnalysis, trendAnalysis, bollingerAnalysis, stochasticAnalysis, adxAnalysis, ichimokuAnalysis + " | " + superTrendAnalysis + " | " + vwapAnalysis
+        );
     }
     
     /**

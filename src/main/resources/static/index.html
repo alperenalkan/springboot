@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitcoin Signal Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@4.3.3/dist/chartjs-plugin-zoom.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -25,7 +26,9 @@
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: visible;
+            padding-bottom: 30px;
         }
 
         .header {
@@ -126,6 +129,8 @@
             margin-bottom: 30px;
             height: 400px;
             position: relative;
+            max-width: 100%;
+            overflow-x: auto;
         }
 
         .chart-container h3 {
@@ -203,6 +208,40 @@
         .price-up { color: #27ae60; }
         .price-down { color: #e74c3c; }
 
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 98vw;
+            max-height: 98vh;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: auto;
+            min-width: 600px;
+            min-height: 400px;
+        }
+        .modal-close {
+            position: absolute;
+            top: 10px; right: 20px;
+            font-size: 2rem;
+            color: #e74c3c;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        @media (max-width: 900px) {
+            .modal-content { padding: 10px; }
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 2rem;
@@ -236,6 +275,7 @@
                 <button class="btn btn-primary" onclick="fetchLatestData()">🔄 Refresh Data</button>
                 <button class="btn btn-success" onclick="fetchNewData()">📊 Fetch New Data</button>
                 <button class="btn btn-primary" onclick="generateSignal()">🎯 Generate Signal</button>
+                <button class="btn btn-primary" onclick="resetZoom()">Reset Zoom</button>
             </div>
 
             <div class="stats-grid">
@@ -406,6 +446,14 @@
                     <h3>🔗 On-Chain Analysis</h3>
                     <div class="value" id="onChainExplanation" style="font-size: 0.9rem; line-height: 1.4; text-align: left;">-</div>
                 </div>
+                <div class="stat-card">
+                    <h3>SuperTrend</h3>
+                    <div class="value" id="superTrend">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>VWAP</h3>
+                    <div class="value" id="vwap">0</div>
+                </div>
             </div>
 
             <div class="signal-card">
@@ -418,14 +466,26 @@
 
             <div class="chart-container">
                 <h3>Bitcoin Price Chart (Last 300 Days)</h3>
+                <button class="btn btn-primary" id="openChartModalBtn" onclick="openChartModal()" style="float:right;margin-bottom:10px;" disabled>Grafiği Büyüt</button>
                 <canvas id="priceChart"></canvas>
+            </div>
+            <!-- Modal -->
+            <div id="chartModal" class="modal">
+                <div class="modal-content">
+                    <button class="modal-close" onclick="closeChartModal()">&times;</button>
+                    <h3 style="margin-bottom:10px;">Bitcoin Price Chart (Full Screen)</h3>
+                    <button class="btn btn-primary" onclick="resetZoomModal()">Reset Zoom</button>
+                    <canvas id="modalPriceChart" width="1200" height="700" style="width:90vw;height:70vh;max-width:1200px;max-height:700px;min-width:600px;min-height:400px;"></canvas>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         let priceChart;
+        let modalPriceChart;
         let lastPrice = 0;
+        let chartLoaded = false;
 
         // Initialize the dashboard
         document.addEventListener('DOMContentLoaded', function() {
@@ -443,6 +503,9 @@
         }
 
         function initializeChart() {
+            if (window['chartjs-plugin-zoom']) {
+                Chart.register(window['chartjs-plugin-zoom']);
+            }
             const ctx = document.getElementById('priceChart').getContext('2d');
             priceChart = new Chart(ctx, {
                 type: 'line',
@@ -484,6 +547,46 @@
                             fill: false,
                             pointRadius: 0,
                             tension: 0.4
+                        },
+                        {
+                            label: 'SuperTrend',
+                            data: [],
+                            borderColor: '#8e44ad',
+                            borderWidth: 2,
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.4,
+                            borderDash: [6, 4]
+                        },
+                        {
+                            label: 'VWAP',
+                            data: [],
+                            borderColor: '#00b894',
+                            borderWidth: 2,
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.4,
+                            borderDash: [2, 2]
+                        },
+                        {
+                            label: 'Bollinger Upper',
+                            data: [],
+                            borderColor: '#e17055',
+                            borderWidth: 1,
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.4,
+                            borderDash: [4, 2]
+                        },
+                        {
+                            label: 'Bollinger Lower',
+                            data: [],
+                            borderColor: '#00b894',
+                            borderWidth: 1,
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.4,
+                            borderDash: [4, 2]
                         }
                     ]
                 },
@@ -494,6 +597,18 @@
                         legend: {
                             display: true,
                             position: 'top'
+                        },
+                        zoom: {
+                            pan: {
+                                enabled: true,
+                                mode: 'x',
+                                modifierKey: 'ctrl',
+                            },
+                            zoom: {
+                                wheel: { enabled: true },
+                                pinch: { enabled: true },
+                                mode: 'x',
+                            }
                         }
                     },
                     scales: {
@@ -540,6 +655,11 @@
                 updatePriceDisplay(dataArr[dataArr.length - 1]); // last price for stat cards
                 updateChart(dataArr);
                 showMessage('Price data updated successfully!', 'success');
+                // chartLoaded ve buton aktifliği sadece veri geldiyse
+                if (dataArr && dataArr.length > 0) {
+                    chartLoaded = true;
+                    document.getElementById('openChartModalBtn').disabled = false;
+                }
             } catch (error) {
                 console.error('Error fetching price data:', error);
                 showMessage('Error fetching price data: ' + error.message, 'error');
@@ -1013,35 +1133,13 @@
             if (signal.ichimokuChikou !== undefined) {
                 document.getElementById('ichimokuChikou').textContent = signal.ichimokuChikou.toFixed(2);
             }
-            // Ichimoku Signal
-            if (signal.ichimokuSignal !== undefined) {
-                document.getElementById('ichimokuSignal').textContent = signal.ichimokuSignal;
+            // SuperTrend
+            if (signal.superTrend !== undefined) {
+                document.getElementById('superTrend').textContent = signal.superTrend.toFixed(2);
             }
-            
-            // Ichimoku Fiyat Tahminleri
-            if (signal.ichimokuEntryPrice !== undefined && signal.ichimokuEntryPrice !== null) {
-                const entryFormatted = '$' + parseFloat(signal.ichimokuEntryPrice).toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-                document.getElementById('ichimokuEntryPrice').textContent = entryFormatted;
-            }
-            if (signal.ichimokuStopLoss !== undefined && signal.ichimokuStopLoss !== null) {
-                const slFormatted = '$' + parseFloat(signal.ichimokuStopLoss).toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-                document.getElementById('ichimokuStopLoss').textContent = slFormatted;
-            }
-            if (signal.ichimokuTakeProfit !== undefined && signal.ichimokuTakeProfit !== null) {
-                const tpFormatted = '$' + parseFloat(signal.ichimokuTakeProfit).toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-                document.getElementById('ichimokuTakeProfit').textContent = tpFormatted;
-            }
-            if (signal.ichimokuPredictionExplanation !== undefined) {
-                document.getElementById('ichimokuPredictionExplanation').textContent = signal.ichimokuPredictionExplanation;
+            // VWAP
+            if (signal.vwap !== undefined) {
+                document.getElementById('vwap').textContent = signal.vwap.toFixed(2);
             }
         }
 
@@ -1053,6 +1151,10 @@
             priceChart.data.datasets[1].data = [];
             priceChart.data.datasets[2].data = [];
             priceChart.data.datasets[3].data = [];
+            priceChart.data.datasets[4].data = [];
+            priceChart.data.datasets[5].data = [];
+            priceChart.data.datasets[6].data = [];
+            priceChart.data.datasets[7].data = [];
             dataArr.forEach(data => {
                 const timestamp = new Date(data.timestamp).toLocaleDateString();
                 priceChart.data.labels.push(timestamp);
@@ -1060,8 +1162,82 @@
                 priceChart.data.datasets[1].data.push(data.sma20 !== undefined ? parseFloat(data.sma20) : null);
                 priceChart.data.datasets[2].data.push(data.sma50 !== undefined ? parseFloat(data.sma50) : null);
                 priceChart.data.datasets[3].data.push(data.sma200 !== undefined ? parseFloat(data.sma200) : null);
+                priceChart.data.datasets[4].data.push(data.superTrend !== undefined ? parseFloat(data.superTrend) : null);
+                priceChart.data.datasets[5].data.push(data.vwap !== undefined ? parseFloat(data.vwap) : null);
+                priceChart.data.datasets[6].data.push(data.bollingerUpper !== undefined ? parseFloat(data.bollingerUpper) : null);
+                priceChart.data.datasets[7].data.push(data.bollingerLower !== undefined ? parseFloat(data.bollingerLower) : null);
             });
             priceChart.update();
+        }
+
+        function resetZoom() {
+            if (priceChart) priceChart.resetZoom();
+        }
+
+        function openChartModal() {
+            if (!chartLoaded || !priceChart || !priceChart.data || !priceChart.data.labels.length || !priceChart.data.datasets.length || priceChart.data.datasets[0].data.length === 0) {
+                alert('Grafik yükleniyor veya veri yok. Lütfen sayfayı yenileyin veya veri çekin.');
+                return;
+            }
+            const modal = document.getElementById('chartModal');
+            modal.style.display = 'flex';
+            // Eski canvas'ı kaldır
+            const modalContent = modal.querySelector('.modal-content');
+            const oldCanvas = document.getElementById('modalPriceChart');
+            if (oldCanvas) oldCanvas.remove();
+            // Yeni canvas ekle
+            const newCanvas = document.createElement('canvas');
+            newCanvas.id = 'modalPriceChart';
+            newCanvas.width = 1200;
+            newCanvas.height = 700;
+            newCanvas.style.width = '90vw';
+            newCanvas.style.height = '70vh';
+            newCanvas.style.maxWidth = '1200px';
+            newCanvas.style.maxHeight = '700px';
+            newCanvas.style.minWidth = '600px';
+            newCanvas.style.minHeight = '400px';
+            modalContent.appendChild(newCanvas);
+            // Modal grafiğini oluştur
+            setTimeout(() => {
+                initializeModalChart();
+            }, 400);
+        }
+        function closeChartModal() {
+            const modal = document.getElementById('chartModal');
+            modal.style.display = 'none';
+            if (modalPriceChart) { modalPriceChart.destroy(); modalPriceChart = null; }
+            // Modal canvas'ı DOM'dan kaldır
+            const oldCanvas = document.getElementById('modalPriceChart');
+            if (oldCanvas) oldCanvas.remove();
+        }
+        function initializeModalChart() {
+            if (window['chartjs-plugin-zoom']) {
+                Chart.register(window['chartjs-plugin-zoom']);
+            }
+            const ctx = document.getElementById('modalPriceChart').getContext('2d');
+            // Canvas'ı temizle
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            // Ana grafikteki verileri kopyala
+            modalPriceChart = new Chart(ctx, {
+                type: 'line',
+                data: JSON.parse(JSON.stringify(priceChart.data)),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        zoom: {
+                            pan: { enabled: true, mode: 'x', modifierKey: 'ctrl' },
+                            zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }
+                        }
+                    },
+                    scales: priceChart.options.scales,
+                    elements: { point: { radius: 2, hoverRadius: 5 } }
+                }
+            });
+        }
+        function resetZoomModal() {
+            if (modalPriceChart) modalPriceChart.resetZoom();
         }
 
         // Auto-refresh every 5 minutes
@@ -1069,6 +1245,12 @@
             fetchLatestData();
             generateSignal();
         }, 5 * 60 * 1000);
+
+        // Modal dışında tıklanınca kapat
+        window.onclick = function(event) {
+            const modal = document.getElementById('chartModal');
+            if (event.target === modal) closeChartModal();
+        }
     </script>
 </body>
 </html> 

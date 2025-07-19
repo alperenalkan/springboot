@@ -71,6 +71,44 @@ public class FetchService {
     public void fetchAndSavePriceData(PriceEntity.IntervalType intervalType) {
         try {
             logger.info("Fetching price data for interval: {}", intervalType);
+            if (intervalType == PriceEntity.IntervalType.ONE_HOUR) {
+                // Binance API'den saatlik veri çek (daha fazla bar için limit=1000)
+                String binanceUrl = "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=1000";
+                String response = webClientBuilder.build()
+                        .get()
+                        .uri(binanceUrl)
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .block();
+                if (response != null) {
+                    JsonNode arr = objectMapper.readTree(response);
+                    List<PriceEntity> priceEntities = new ArrayList<>();
+                    for (JsonNode kline : arr) {
+                        long openTime = kline.get(0).asLong();
+                        BigDecimal open = new BigDecimal(kline.get(1).asText());
+                        BigDecimal high = new BigDecimal(kline.get(2).asText());
+                        BigDecimal low = new BigDecimal(kline.get(3).asText());
+                        BigDecimal close = new BigDecimal(kline.get(4).asText());
+                        BigDecimal volume = new BigDecimal(kline.get(5).asText());
+                        LocalDateTime dateTime = LocalDateTime.ofEpochSecond(openTime / 1000, 0, ZoneOffset.UTC);
+                        if (!priceRepository.existsByTimestampAndIntervalType(dateTime, intervalType)) {
+                            PriceEntity entity = new PriceEntity(
+                                    dateTime, open, high, low, close, volume, intervalType
+                            );
+                            priceEntities.add(entity);
+                        }
+                    }
+                    if (!priceEntities.isEmpty()) {
+                        List<PriceEntity> savedEntities = priceRepository.saveAll(priceEntities);
+                        logger.info("Successfully saved {} new price records for interval: {} (Binance)", savedEntities.size(), intervalType);
+                    } else {
+                        logger.info("No new price data to save for interval: {} (Binance)", intervalType);
+                    }
+                } else {
+                    logger.warn("Binance response was null for interval: {}", intervalType);
+                }
+                return;
+            }
             String days = getDaysForInterval(intervalType);
             String apiInterval = getIntervalString(intervalType);
             // 4H için hourly veri çekilecek
@@ -251,6 +289,50 @@ public class FetchService {
         } catch (Exception e) {
             logger.error("WebClient test failed: {}", e.getMessage(), e);
             throw new RuntimeException("WebClient test failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Binance API'den anlık BTC/USDT fiyatı çeker
+     */
+    public BigDecimal fetchBinancePrice() {
+        try {
+            String binanceUrl = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT";
+            String response = webClientBuilder.build()
+                    .get()
+                    .uri(binanceUrl)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            if (response != null) {
+                JsonNode root = objectMapper.readTree(response);
+                String priceStr = root.get("price").asText();
+                return new BigDecimal(priceStr);
+            }
+        } catch (Exception e) {
+            logger.error("Binance fiyatı çekilemedi: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * CoinGecko ve Binance fiyatlarını karşılaştırır
+     */
+    public String compareBinanceAndCoingeckoPrice() {
+        try {
+            // CoinGecko'dan mevcut fiyatı çek (en son kaydedilen fiyatı kullanıyoruz)
+            PriceEntity latest = priceRepository.findLatestByIntervalType(PriceEntity.IntervalType.ONE_HOUR);
+            BigDecimal coingeckoPrice = latest != null ? latest.getClosePrice() : null;
+            BigDecimal binancePrice = fetchBinancePrice();
+            if (coingeckoPrice == null || binancePrice == null) {
+                return "Fiyatlar alınamadı.";
+            }
+            BigDecimal diff = binancePrice.subtract(coingeckoPrice).abs();
+            BigDecimal diffPercent = diff.divide(coingeckoPrice, 6, java.math.RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+            return String.format("CoinGecko: %s, Binance: %s, Fark: %s (%%%s)", coingeckoPrice, binancePrice, diff, diffPercent);
+        } catch (Exception e) {
+            logger.error("Fiyat karşılaştırma hatası: {}", e.getMessage());
+            return "Karşılaştırma hatası: " + e.getMessage();
         }
     }
 } 
